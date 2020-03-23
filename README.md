@@ -19,6 +19,15 @@ Please use **one** of the two installation options, either native **or** docker 
   * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
 * Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases).
 
+### How to get the simulator running on mac
+Follow the link to the simulator and download the latest version for mac called `mac_sys_int.zip`.
+Unzip with `unzip mac_sys_int.zip`. Now open up a terminal and `cd` into the app, which can be accessed like any normal folder.
+
+Go to `mac_sys_int/sys_int.app/Contents/MacOS`. There you should see a file called `capstone_v2`. Give this file execution rights with
+`chmod +x capstone_v2`.
+
+Now you should be almost good to go. Except that mac is still warning about the fact that it does not now the developer of this app. To solve this problem you can, instead of just double clicking the app or opening it via terminal, right click on the app logo and click on open. Then it should give you the choice of opening the app nevertheless.
+
 ### Docker Installation
 [Install Docker](https://docs.docker.com/engine/installation/)
 

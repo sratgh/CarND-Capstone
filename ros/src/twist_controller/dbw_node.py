@@ -30,7 +30,7 @@ Once you have the proposed throttle, brake, and steer values, publish it on the 
 that we have created in the `__init__` function.
 
 '''
-TWIST_CONTROLLER_UPDATE_FREQUENCY = 50
+TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 
 class DBWNode(object):
     def __init__(self):

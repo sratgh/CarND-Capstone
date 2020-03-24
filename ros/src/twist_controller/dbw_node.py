@@ -81,13 +81,13 @@ class DBWNode(object):
                                                           self.linear_vel,
                                                           self.angular_vel)
             if self.dbw_enabled:
-                rospy.loginfo("dbw_node.py: Controller output: throttle=%.3f, brake=%.3f, steer=%.3f", self.throttle, self.brake, self.steer)
+                rospy.loginfo("dbw_node.py: Controller output: throttle=%.3f, brake=%.3f, steering=%.3f", self.throttle, self.brake, self.steering)
                 self.publish(self.throttle, self.brake, self.steering)
             rate.sleep()
 
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg
-        rospy.loginfo("dbw_node.py: Drive by wire was turned: {}".format("on" if dbw_enabled else "off"))
+        rospy.loginfo("dbw_node.py: Drive by wire was turned: {}".format("on" if self.dbw_enabled else "off"))
 
     def twist_cb(self, msg):
         self.linear_vel = msg.twist.linear.x

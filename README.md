@@ -59,6 +59,7 @@ pip install -r requirements.txt
 3. Make and run styx
 ```bash
 cd ros
+catkin_make clean (OPTIONAL)
 catkin_make
 source devel/setup.sh
 roslaunch launch/styx.launch
@@ -97,3 +98,12 @@ Specific to these libraries, the simulator grader and Carla use the following:
 | OpenMP | N/A | N/A |
 
 We are working on a fix to line up the OpenCV versions between the two.
+
+### Most important ROS commands
+`rosnode list` Lists all ros nodes
+`rosnode info <any node i.e. "/waypoint_loader" >` Lists specific information about that node
+`rostopic list` Lists all ros topics
+`rostopic info <any topic i.e. "/base_waypoints" >` Lists specific information about that topic
+`rosmsg info <any message i.e. geometry_msgs/Twist>` Lists the specific message information
+`rosed geometry_msgs Twist.msg` Lists even more information about the message Twist.msg
+`rostopic echo <any topic i.e. "/base_waypoints">` Echos information about specific topic

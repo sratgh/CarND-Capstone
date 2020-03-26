@@ -30,6 +30,12 @@ Once you have the proposed throttle, brake, and steer values, publish it on the 
 that we have created in the `__init__` function.
 
 '''
+# This parameter defines the frquency at which throttle, brake
+# and steering command are send to the vehicle. It must be equal
+# or larger than 10 Hz. Changing this parameter changes the
+# closed loop behavior, i.e. if & how the vehicle follows the
+# reference trajectory. If this paramter is changed, the
+# controller parameters KP, KI, and KD may become invalid.
 TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 
 class DBWNode(object):

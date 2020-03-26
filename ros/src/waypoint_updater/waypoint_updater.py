@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Int32
 from styx_msgs.msg import Lane, Waypoint
 from scipy.spatial import KDTree
 import numpy as np
@@ -27,20 +28,17 @@ MAX_DECEL = .5
 
 class WaypointUpdater(object):
     def __init__(self):
-	# Member variables	
-	
-	
+	# Member variables
+
+
         rospy.loginfo('Initializing my waypoint_updater.')
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-	rospy.Subscriber('/traffic_waypoints', Int32, self.traffic_cb)
+        rospy.Subscriber('/traffic_waypoints', Int32, self.traffic_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-        #rospy.Subscriber('/traffic_waypoint', ?, ?)
-        #rospy.Subscriber('/obstacle_waypoint', ?, ?)
-
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
@@ -48,14 +46,14 @@ class WaypointUpdater(object):
         self.base_waypoints = None
         self.waypoints_2d = None
         self.waypoint_tree = None
-	self.base_lane = None
-	self.stopline_wp_idx = -1
+        self.base_lane = None
+        self.stopline_wp_idx = -1
 
         self.loop()
 
 
     def loop(self):
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree and self.waypoints_2d:
                 # Get closest waypoint
@@ -78,7 +76,7 @@ class WaypointUpdater(object):
         closest_vect = np.array(closest_coord)
         prev_vect = np.array(prev_coord)
         pos_vect = np.array([x, y])
-        
+
         val = np.dot(closest_vect - prev_vect, pos_vect - closest_vect)
 
         if val > 0:
@@ -86,18 +84,18 @@ class WaypointUpdater(object):
         return closest_idx
 
 
-    def publish_waypoints(self, closest_id):
+    def publish_waypoints(self):
         final_lane = self.generate_lane()
         self.final_waypoints_pub.publish(final_lane)
 
     def generate_lane(self):
         lane = Lane()
-	
+
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
-        # Slice base_waypoints 
+        # Slice base_waypoints
         base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
-	
+
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx>=farthest_idx):
             lane.waypoints = base_waypoints
         else:

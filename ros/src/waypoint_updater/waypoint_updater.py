@@ -49,7 +49,8 @@ class WaypointUpdater(object):
 
 
     def loop(self):
-        rate = rospy.Rate(50)
+        # Reduce to 10Hz (!) otherwise the simulation setup might not be working due to latency issues
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree and self.waypoints_2d:
                 # Get closest waypoint

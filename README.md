@@ -66,6 +66,28 @@ roslaunch launch/styx.launch
 ```
 4. Run the simulator
 
+### Tipps & Tricks for problems with Docker
+The docker installation itself was quite straightforward for me (installed on mac). After having opened the docker environment I tried installing the requirements via the above command
+```bash
+cd CarND-Capstone
+pip install -r requirements.txt
+```
+
+This did not go through without errors. It complained about the python package mock. Therefore I first had to update pip itself inside the docker container with
+```bash
+pip install --upgrade pip
+```
+
+I then run
+```bash
+cd CarND-Capstone
+pip install -r requirements.txt
+pip install mock
+```
+After this detour it worked for me.
+
+
+
 ### Real world testing
 1. Download [training bag](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/traffic_light_bag_file.zip) that was recorded on the Udacity self-driving car.
 2. Unzip the file

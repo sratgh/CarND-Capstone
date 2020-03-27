@@ -81,8 +81,10 @@ class DBWNode(object):
                                                           self.linear_vel,
                                                           self.angular_vel)
             if self.dbw_enabled:
-                rospy.loginfo("dbw_node.py: Controller output: throttle=%.3f, brake=%.3f, steering=%.3f", self.throttle, self.brake, self.steering)
+                rospy.loginfo("dbw_node.py: Call to dbw_node, controller output: throttle=%.3f, brake=%.3f, steering=%.3f", self.throttle, self.brake, self.steering)
                 self.publish(self.throttle, self.brake, self.steering)
+            else:
+                rospy.loginfo("dbw_node.py: Call to dbw_node.py, drive-by-wire is disabled.")
             rate.sleep()
 
     def dbw_enabled_cb(self, msg):

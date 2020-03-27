@@ -26,6 +26,12 @@ SAVE_CAMERA_IMAGES_IS_ACTIVE = True
 # is taken from the simulator. Turn this to True only when
 # using the code in the simulator!
 USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = True
+# This calibration paramter renders the rate for
+# proceesing images and detecting traffic lights
+# It should be chosen by ansering the question how fast
+# do images change and traffic lights disappear?
+# Unit is Hz
+TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 5
 
 class TLDetector(object):
     def __init__(self):
@@ -65,7 +71,22 @@ class TLDetector(object):
         self.directory_for_images = '/data/'
         self.image_counter = 0
 
-        rospy.spin()
+        #rospy.spin()
+        self.loop()
+
+    def loop(self):
+        rate = rospy.Rate(TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY)
+        while not rospy.is_shutdown():
+            rospy.loginfo("tl_detector: Call to the traffic light detector.")
+            if not None in (self.waypoints,
+                            self.pose,
+                            self.camera_image):
+                self.process_traffic_lights()
+            else:
+                rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
+
+
+            rate.sleep()
 
     def pose_cb(self, msg):
         self.pose = msg
@@ -114,10 +135,10 @@ class TLDetector(object):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         img.encoding = "rgb8"
         cv_image = CvBridge().imgmsg_to_cv2(img, "bgr8")
-        file_name = curr_dir + self.self.directory_for_images+ '/img_'+'%06d'% self.image_counter +'.png'
+        file_name = curr_dir + self.directory_for_images+ 'img_'+'%06d'% self.image_counter +'.png'
         cv2.imwrite(file_name, cv_image)
         self.image_counter += 1
-        rospy.loginfo("tl_detector.py: Camere image saved to %s!", file_name)
+        rospy.loginfo("tl_detector.py: Camera image saved to %s!", file_name)
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position

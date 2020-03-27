@@ -2,6 +2,8 @@
 import cv2
 import numpy as np
 import glob
+from styx_msgs.msg import TrafficLight
+import collections
 
 class TLClassifier(object):
     """
@@ -66,8 +68,15 @@ class TLClassifier(object):
 
 if __name__ == '__main__':
     labels=[]
+    f = open("labels.csv", "w")
+    print(f)
     cls = TLClassifier()
-    for name in glob.glob('training_images/*'):
+    for name in glob.glob('data/*'):
+        #print(name)
         labels.append(cls.get_classification(cv2.imread(name)))
+        f.write(str(labels[-1])+",\n")
 
     print(labels)
+    counter = collections.Counter(labels)
+    print(counter)
+    print("UNKNOWN=4, GREEN=2, YELLOW=1, RED=0")

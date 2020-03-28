@@ -6,14 +6,14 @@ from styx_msgs.msg import TrafficLight
 import collections
 
 import tensorflow as tf
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageColor
 import time
 from scipy.stats import norm
 
-#plt.style.use('ggplot')
+#style.use('ggplot')
 
 class TLClassifier(object):
     """
@@ -244,8 +244,8 @@ class TLClassifier(object):
             # Each class with be represented by a differently colored box
             draw_boxes(image, box_coords, classes)
 
-            plt.figure(figsize=(12, 8))
-            plt.imshow(image)
+            #plt.figure(figsize=(12, 8))
+            #plt.imshow(image)
 
     def time_detection(self, sess, img_height, img_width, runs=10):
         image_tensor = sess.graph.get_tensor_by_name('image_tensor:0')
@@ -269,18 +269,18 @@ class TLClassifier(object):
             with tf.Session(graph=detection_graph) as sess:
                 times = time_detection(sess, 600, 1000, runs=10)
 
-        def visualize_times(self):
-            # Create a figure instance
-            fig = plt.figure(1, figsize=(9, 6))
+        #def visualize_times(self):
+            ## Create a figure instance
+            #fig = plt.figure(1, figsize=(9, 6))
 
-            # Create an axes instance
-            ax = fig.add_subplot(111)
-            plt.title("Object Detection Timings")
-            plt.ylabel("Time (ms)")
+            ## Create an axes instance
+            #ax = fig.add_subplot(111)
+            #plt.title("Object Detection Timings")
+            #plt.ylabel("Time (ms)")
 
             # Create the boxplot
-            plt.style.use('fivethirtyeight')
-            bp = ax.boxplot(times)
+            #plt.style.use('fivethirtyeight')
+            #bp = ax.boxplot(times)
 
 
 if __name__ == '__main__':

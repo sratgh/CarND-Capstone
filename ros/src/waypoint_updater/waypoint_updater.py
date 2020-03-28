@@ -11,19 +11,21 @@ import math
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
 
-As mentioned in the doc, you should ideally first implement a version which does not care
-about traffic lights or obstacles.
+It is taken into account the position of the traffic light in order to decelerate waypoints.
 
-Once you have created dbw_node, you will update this node to use the status of traffic lights too.
+This node is subscribed to the following topics:
+- current_pose
+- base_waypoints: publishes a list of all waypoints for the track, so this list includes waypoints
+                     both before and after the vehicle
+- traffic_waypoint: it is the index of the waypoint for nearest upcoming red light's stop line
+And it publishes final_waypoints, which are the list of waypoints to be followed.
 
-Please note that our simulator also provides the exact location of traffic lights and their
-current status in `/vehicle/traffic_lights` message. You can use this message to build this node
-as well as to verify your TL classifier.
-
-TODO (for Yousuf and Aaron): Stopline location for each traffic light.
+There are two parameters that can be tuned: 
+- LOOKAHEAD_WPS: which defines the number of waypoints that will be published,
+- MAX_DECEL: it is the maximum deceleration to be commanded.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 200 # Number of waypoints will be published
 MAX_DECEL = .5
 
 class WaypointUpdater(object):
@@ -57,12 +59,15 @@ class WaypointUpdater(object):
 
             rate.sleep()
 
-
+    # Compute the closest waypoint index
     def get_closest_waypoint_idx(self):
+        # Get the car's current position
         x = self.pose.pose.position.x
         y = self.pose.pose.position.y
+        
         # Note: .query returns (distance, index)
         closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+        
         # Check if closest is ahead or behind vehicle
         prev_idx = closest_idx - 1
         closest_coord = self.waypoints_2d[closest_idx]
@@ -80,18 +85,20 @@ class WaypointUpdater(object):
         
         return closest_idx
 
-
+    # Publish the main output final_waypoints
     def publish_waypoints(self, closest_id):
         final_lane = self.generate_lane()
         self.final_waypoints_pub.publish(final_lane)
 
+    # This function generates the lane which will be sent
     def generate_lane(self):
         lane = Lane()
-    
+        
+        # Compute the closest index to our position
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
         
-        # Slice base_waypoints 
+        # Slice base_waypoints with our closest and farthest indexes
         base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
     
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx>=farthest_idx):
@@ -101,7 +108,8 @@ class WaypointUpdater(object):
 
         return lane
         #pass
-
+        
+    # Function to decelerate the waypoints between our position and the traffic light
     def decelerate_waypoints(self, waypoints, closest_idx):
         temp = []
         for i, wp in enumerate(waypoints):
@@ -117,11 +125,12 @@ class WaypointUpdater(object):
             temp.append(p)
 
         return temp
+    
+    # Callback function when receiving current_pose
     def pose_cb(self, msg):
-        # TODO: Implement
         self.pose = msg
 
-
+    # Callback function when receiving base_waypoints
     def waypoints_cb(self, waypoints):
         self.base_waypoints = waypoints
         self.base_lane = waypoints
@@ -131,14 +140,14 @@ class WaypointUpdater(object):
                 for w in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
-
+    # Callback function when receiving traffic_waypoint
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
         self.stopline_wp_idx = msg.data
 
-
+    # Callback for /obstacle_waypoint message
     def obstacle_cb(self, msg):
-        # TODO: Callback for /obstacle_waypoint message. We will implement it later
+        
         pass
 
 
@@ -149,7 +158,7 @@ class WaypointUpdater(object):
     def set_waypoint_velocity(self, waypoints, waypoint, velocity):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
-
+    # Compute distance between two waypoints
     def distance(self, waypoints, wp1, wp2):
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)

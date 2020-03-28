@@ -108,20 +108,20 @@ KD
 The path planning algorithm defines the final waypoints to be followed by the car. In order to compute this path, our class receives the base waypoints and it should select those to be commanded.
 
 This node is subscribed to the following topics:
-*_current_pose_
-*_base_waypoints_: publishes a list of all waypoints for the track, so this list includes waypoints
+* _current_pose_
+* _base_waypoints_: publishes a list of all waypoints for the track, so this list includes waypoints
                      both before and after the vehicle
-*_traffic_waypoint_: it is the index of the waypoint for nearest upcoming red light's stop line
+* _traffic_waypoint_: it is the index of the waypoint for nearest upcoming red light's stop line
 
 And it publishes final_waypoints, which are the list of waypoints to be followed.
 
 There are two parameters that can be tuned: 
-*_LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
-*_MAX_DECEL_: it is the maximum deceleration to be commanded.
+* _LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
+* _MAX_DECEL_: it is the maximum deceleration to be commanded.
 
 When a traffic waypoint index is received, commanded velocity is decreased gradually from maximum velocity to zero as depicted in the following figure.
 
-<img src="./data/decelerate_waypoints.png" alt="Stephan Studener" width="300">
+![Valid dataset](data/decelerate_waypoints.png)
 
 ## Installation
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).

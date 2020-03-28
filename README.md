@@ -9,11 +9,15 @@ Udacity's original repository which provides the virtual machine can be found [h
 
 ## Team & Organization
 Team consists of four individuals from Germany, Spain and the United States.
+
+
 |     Image              |     Name      |  LinkedIn or GitHub
 |------------------------|---------------|----------------|---------------|
 | <img src="./data/Simon_Rudolph.jpg" alt="Simon Rudolph" width="150" height="150"> | Simon Rudolph | [Simon](https://de.linkedin.com/in/simon-rudolph-b4b762138) 
 | <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener| [Stephan](https://www.linkedin.com/in/stephanstudener/) 
 | <img src="./data/Mario_de_la_Rosa_Triviniojpg" alt="Mario de la Rosa Trivinio" width="150" height="150"> | Mario de la Rosa Trivinio | [Mario](https://es.linkedin.com/in/mardetri) 
+
+
 ### Teamlead & Integration Engineer
 Simon Rudolph takes the role of the team lead. 
 The teamlead takes responsibility to setup an integration & working environment. He owns the repository, manages branches and is the source of truth with respect to running the integrated software stack against project objectives in his environment (Udacity's Simulator running on a MacBook Pro and ROS running in a virtual machine on the same hardware). 
@@ -70,6 +74,8 @@ The nodes and their responsibilities are explained in the following.
 In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above): 
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
 * twist_controller.py: This file keeps the class for the control algorithm.
+
+
 The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). This parameters are
 * The update frequency of the commands for controlling the longitudinal and lateral vehicle dynamics:
 ```python 

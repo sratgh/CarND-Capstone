@@ -1,21 +1,21 @@
 # Udacity's Self-Driving Car Engineer Nanodegree: System Integration, the Capstone-Project
 This is team XXX's solution of the capstone project of Udacity's Self Driving Car Engineer Program. The goal of this project is to develop different components of a self driving car software stack and integrate them into an appropriate operating system, the robot operating system (ROS), such that a real car that utilizes this system can navigate a test track in an autonomous manner. The software components implement many different parts of the software stack of an autonomous vehicle: They cover high-level vehicle control law for longitudinal and lateral dynamics, traffic light detection and classification and (simplified) path planing. Before launching the software in a real vehicle, the stack can be tested using Udacity's simulator.
 
-Udacity's original repository with virgin files can be found [here](https://github.com/udacity/CarND-Capstone):
+Udacity's original repository with virgin files can be found [here](https://github.com/udacity/CarND-Capstone).
 
-Udacity's original  repository wich provides the simulator can be found [here](https://github.com/udacity/CarND-Capstone/releases):
+Udacity's original  repository wich provides the simulator can be found [here](https://github.com/udacity/CarND-Capstone/releases).
 
-Udacity's original repository which provides the virtual machine can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/Udacity_VM_Base_V1.0.0.zip):
+Udacity's original repository which provides the virtual machine can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/Udacity_VM_Base_V1.0.0.zip).
 
 ## Team & Organization
 Team consists of four individuals from Germany, Spain and the United States.
 
 
-|     Image              |     Name      |  LinkedIn or GitHub
-|------------------------|---------------|----------------|---------------|
-| <img src="./data/Simon_Rudolph.jpg" alt="Simon Rudolph" width="150" height="150"> | Simon Rudolph | [Simon](https://de.linkedin.com/in/simon-rudolph-b4b762138) 
-| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener| [Stephan](https://www.linkedin.com/in/stephanstudener/) 
-| <img src="./data/Mario_de_la_Rosa_Triviniojpg" alt="Mario de la Rosa Trivinio" width="150" height="150"> | Mario de la Rosa Trivinio | [Mario](https://es.linkedin.com/in/mardetri) 
+|     Image                   |     Name      |  LinkedIn or GitHub
+|------------------------|---------------|-----------------------
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
+
 
 
 ### Teamlead & Integration Engineer

@@ -1,17 +1,17 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 #from styx_msgs.msg import TrafficLight
 import cv2
 import numpy as np
 import glob
-from styx_msgs.msg import TrafficLight
+#from styx_msgs.msg import TrafficLight
 import collections
 
 import tensorflow as tf
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageColor
@@ -20,11 +20,11 @@ from scipy.stats import norm
 
 # Import everything needed to edit/save/watch video clips
 #import imageio
-from moviepy.editor import VideoFileClip
-from IPython.display import HTML
-import IPython.display as display
+#from moviepy.editor import VideoFileClip
+#from IPython.display import HTML
+#import IPython.display as display
 
-plt.style.use('ggplot')
+#plt.style.use('ggplot')
 
 from keras.preprocessing.image import ImageDataGenerator
 #from keras_applications.mobilenet import MobileNetV2
@@ -94,41 +94,6 @@ class TLClassifier(object):
         # The classification of the object (integer id).
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
-    # def load_images(self, data_dir):
-    #
-    #     data_dir = pathlib.Path(data_dir)
-    #     image_count = len(list(data_dir.glob('*.jpg')))
-    #     print("image_count", image_count)
-    #     CLASS_NAMES = np.array([item.name for item in data_dir.glob('*') if item.name != "LICENSE.txt"])
-    #     print("CLASS_NAMES", CLASS_NAMES)
-
-        ## Only with tensorflow >1.5
-        #list_ds = tf.data.Dataset.list_files(str(data_dir/'*/*'))
-
-        # return list_ds
-
-    # def get_label(file_path):
-    #   # convert the path to a list of path components
-    #   parts = tf.strings.split(file_path, os.path.sep)
-    #   # The second to last is the class-directory
-    #   return parts[-2] == CLASS_NAMES
-
-    # def decode_img(img):
-    #     IMG_HEIGHT = 224
-    #     IMG_WIDTH = 224
-    #     # convert the compressed string to a 3D uint8 tensor
-    #     img = keras.preprocessing.image.decode_jpeg(img, channels=3)
-    #     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
-    #     img = keras.preprocessing.image.convert_image_dtype(img, tf.float32)
-    #     # resize the image to the desired size.
-    #     return keras.preprocessing.image.resize(img, [IMG_WIDTH, IMG_HEIGHT])
-    #
-    # def process_path(file_path):
-    #     label = get_label(file_path)
-    #     # load the raw data from the file as a string
-    #     img = tf.io.read_file(file_path)
-    #     img = decode_img(img)
-    #     return img, label
 
     def load_and_train(self, data_dir):
         '''
@@ -207,31 +172,10 @@ class TLClassifier(object):
                            validation_data=test_data_gen,
                            validation_steps=800)
 
-        # model.fit_generator(train_generator,
-        #                     steps_per_epoch=2000,
-        #                     epochs=50,
-        #                     validation_data=validation_generator,
-        #                     validation_steps=800)
 
-        #image_batch, label_batch = next(train_data_gen)
-        #self.show_batch(image_batch, label_batch)
-        #plt.show()
+    def predict(self, model, image):
 
-    def show_batch(self, image_batch, label_batch):
-        plt.figure(figsize=(10,10))
-        for n in range(25):
-            ax = plt.subplot(5,5,n+1)
-            plt.imshow(image_batch[n])
-            plt.title(self.CLASS_NAMES[label_batch[n]==1][0].title())
-            plt.axis('off')
-            #plt.imsave("image_batch_"+str(n),image_batch[n])
-
-    # def load_labels(self, filename):
-    #     labels=[]
-    #     f = open(filename, 'r')
-    #     for line in f:
-    #         labels.append(int(line[:-2]))
-    #     return labels
+        return model.predict(image)
 
 
     def get_classification(self, image):
@@ -291,49 +235,6 @@ class TLClassifier(object):
         x = tf.layers.batch_normalization(x)
 
         return tf.nn.relu(x)
-
-    def compare_parameters(self):
-        # constants but you can change them so I guess they're not so constant :)
-        INPUT_CHANNELS = 32
-        OUTPUT_CHANNELS = 512
-        KERNEL_SIZE = 3
-        IMG_HEIGHT = 225
-        IMG_WIDTH = 300
-
-        with tf.Session(graph=tf.Graph()) as sess:
-            # input
-            x = tf.constant(np.random.randn(1, IMG_HEIGHT, IMG_WIDTH, INPUT_CHANNELS), dtype=tf.float32)
-
-            with tf.variable_scope('vanilla'):
-                vanilla_conv = vanilla_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
-            with tf.variable_scope('mobile'):
-                mobilenet_conv = mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
-
-            vanilla_params = [
-                (v.name, np.prod(v.get_shape().as_list()))
-                for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'vanilla')
-            ]
-            mobile_params = [
-                (v.name, np.prod(v.get_shape().as_list()))
-                for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'mobile')
-            ]
-
-            print("VANILLA CONV BLOCK")
-            total_vanilla_params = sum([p[1] for p in vanilla_params])
-            for p in vanilla_params:
-                print("Variable {0}: number of params = {1}".format(p[0], p[1]))
-            print("Total number of params =", total_vanilla_params)
-            print()
-
-            print("MOBILENET CONV BLOCK")
-            total_mobile_params = sum([p[1] for p in mobile_params])
-            for p in mobile_params:
-                print("Variable {0}: number of params = {1}".format(p[0], p[1]))
-            print("Total number of params =", total_mobile_params)
-            print()
-
-            print("{0:.3f}x parameter reduction".format(total_vanilla_params /
-                                                     total_mobile_params))
 
 
     #
@@ -435,40 +336,6 @@ class TLClassifier(object):
             #plt.figure(figsize=(12, 8))
             #plt.imshow(image)
 
-    def time_detection(self, sess, img_height, img_width, runs=10):
-        image_tensor = sess.graph.get_tensor_by_name('image_tensor:0')
-        detection_boxes = sess.graph.get_tensor_by_name('detection_boxes:0')
-        detection_scores = sess.graph.get_tensor_by_name('detection_scores:0')
-        detection_classes = sess.graph.get_tensor_by_name('detection_classes:0')
-
-        # warmup
-        gen_image = np.uint8(np.random.randn(1, img_height, img_width, 3))
-        sess.run([detection_boxes, detection_scores, detection_classes], feed_dict={image_tensor: gen_image})
-
-        times = np.zeros(runs)
-        for i in range(runs):
-            t0 = time.time()
-            sess.run([detection_boxes, detection_scores, detection_classes], feed_dict={image_tensor: image_np})
-            t1 = time.time()
-            times[i] = (t1 - t0) * 1000
-        return times
-
-    def get_times(self):
-        with tf.Session(graph=detection_graph) as sess:
-            times = time_detection(sess, 600, 1000, runs=10)
-
-    def visualize_times(self):
-        # Create a figure instance
-        fig = plt.figure(1, figsize=(9, 6))
-
-        # Create an axes instance
-        ax = fig.add_subplot(111)
-        plt.title("Object Detection Timings")
-        plt.ylabel("Time (ms)")
-
-        # Create the boxplot
-        plt.style.use('fivethirtyeight')
-        bp = ax.boxplot(times)
 
     def get_labels(self, filename="labels.csv", image_folder="data/*"):
         labels=[]

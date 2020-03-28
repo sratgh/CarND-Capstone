@@ -68,7 +68,7 @@ class TLClassifier(object):
 
 
         # Frozen inference graph files. NOTE: change the path to where you saved the models.
-        self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
+        #self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
         #self.RFCN_GRAPH_FILE = 'rfcn_resnet101_coco_11_06_2017/frozen_inference_graph.pb'
         #self.FASTER_RCNN_GRAPH_FILE = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017/frozen_inference_graph.pb'
         # Colors (one for each class)
@@ -76,23 +76,23 @@ class TLClassifier(object):
         #print("Number of colors =", len(cmap))
         self.COLOR_LIST = sorted([c for c in cmap.keys()])
 
-        self.detection_graph = self.load_graph(self.SSD_GRAPH_FILE)
+        #self.detection_graph = self.load_graph(self.SSD_GRAPH_FILE)
         # detection_graph = load_graph(RFCN_GRAPH_FILE)
         # detection_graph = load_graph(FASTER_RCNN_GRAPH_FILE)
 
         # The input placeholder for the image.
         # `get_tensor_by_name` returns the Tensor with the associated name in the Graph.
-        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+        #self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
 
         # Each box represents a part of the image where a particular object was detected.
-        self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+        #self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
 
         # Each score represent how level of confidence for each of the objects.
         # Score is shown on the result image, together with the class label.
-        self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
+        #self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
 
         # The classification of the object (integer id).
-        self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
+        #self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
 
     def load_and_train(self, data_dir):
@@ -208,168 +208,168 @@ class TLClassifier(object):
         return TrafficLight.UNKNOWN
 
 
-    def vanilla_conv_block(self, x, kernel_size, output_channels):
-        """
-        Vanilla Conv -> Batch Norm -> ReLU
-        """
-        x = tf.layers.conv2d(
-            x, output_channels, kernel_size, (2, 2), padding='SAME')
-        x = tf.layers.batch_normalization(x)
-        return tf.nn.relu(x)
-
-    def mobilenet_conv_block(self, x, kernel_size, output_channels):
-        """
-        Depthwise Conv -> Batch Norm -> ReLU -> Pointwise Conv -> Batch Norm -> ReLU
-        """
-        # assumes BHWC format
-        input_channel_dim = x.get_shape().as_list()[-1]
-        W = tf.Variable(tf.truncated_normal((kernel_size, kernel_size, input_channel_dim, 1)))
-
-        # depthwise conv
-        x = tf.nn.depthwise_conv2d(x, W, (1, 2, 2, 1), padding='SAME')
-        x = tf.layers.batch_normalization(x)
-        x = tf.nn.relu(x)
-
-        # pointwise conv
-        x = tf.layers.conv2d(x, output_channels, (1, 1), padding='SAME')
-        x = tf.layers.batch_normalization(x)
-
-        return tf.nn.relu(x)
+    # def vanilla_conv_block(self, x, kernel_size, output_channels):
+    #     """
+    #     Vanilla Conv -> Batch Norm -> ReLU
+    #     """
+    #     x = tf.layers.conv2d(
+    #         x, output_channels, kernel_size, (2, 2), padding='SAME')
+    #     x = tf.layers.batch_normalization(x)
+    #     return tf.nn.relu(x)
+    #
+    # def mobilenet_conv_block(self, x, kernel_size, output_channels):
+    #     """
+    #     Depthwise Conv -> Batch Norm -> ReLU -> Pointwise Conv -> Batch Norm -> ReLU
+    #     """
+    #     # assumes BHWC format
+    #     input_channel_dim = x.get_shape().as_list()[-1]
+    #     W = tf.Variable(tf.truncated_normal((kernel_size, kernel_size, input_channel_dim, 1)))
+    #
+    #     # depthwise conv
+    #     x = tf.nn.depthwise_conv2d(x, W, (1, 2, 2, 1), padding='SAME')
+    #     x = tf.layers.batch_normalization(x)
+    #     x = tf.nn.relu(x)
+    #
+    #     # pointwise conv
+    #     x = tf.layers.conv2d(x, output_channels, (1, 1), padding='SAME')
+    #     x = tf.layers.batch_normalization(x)
+    #
+    #     return tf.nn.relu(x)
 
 
     #
     # Utility funcs
     #
-    def filter_boxes(self, min_score, boxes, scores, classes):
-        """Return boxes with a confidence >= `min_score`"""
-        n = len(classes)
-        idxs = []
-        for i in range(n):
-            if scores[i] >= min_score:
-                idxs.append(i)
-
-        filtered_boxes = boxes[idxs, ...]
-        filtered_scores = scores[idxs, ...]
-        filtered_classes = classes[idxs, ...]
-        return filtered_boxes, filtered_scores, filtered_classes
-
-    def to_image_coords(self, boxes, height, width):
-        """
-        The original box coordinate output is normalized, i.e [0, 1].
-
-        This converts it back to the original coordinate based on the image
-        size.
-        """
-        box_coords = np.zeros_like(boxes)
-        box_coords[:, 0] = boxes[:, 0] * height
-        box_coords[:, 1] = boxes[:, 1] * width
-        box_coords[:, 2] = boxes[:, 2] * height
-        box_coords[:, 3] = boxes[:, 3] * width
-
-        return box_coords
-
-    def draw_boxes(self, image, boxes, classes, thickness=4):
-        """Draw bounding boxes on the image"""
-        #image = Image.fromarray(image)
-        ###
-        # For reversing the operation:
-        # im_np = np.asarray(im_pil)
-        ###
-        draw = ImageDraw.Draw(image)
-        for i in range(len(boxes)):
-            bot, left, top, right = boxes[i, ...]
-            class_id = int(classes[i])
-            color = self.COLOR_LIST[class_id]
-            draw.line([(left, top), (left, bot), (right, bot), (right, top), (left, top)], width=thickness, fill=color)
+    # def filter_boxes(self, min_score, boxes, scores, classes):
+    #     """Return boxes with a confidence >= `min_score`"""
+    #     n = len(classes)
+    #     idxs = []
+    #     for i in range(n):
+    #         if scores[i] >= min_score:
+    #             idxs.append(i)
+    #
+    #     filtered_boxes = boxes[idxs, ...]
+    #     filtered_scores = scores[idxs, ...]
+    #     filtered_classes = classes[idxs, ...]
+    #     return filtered_boxes, filtered_scores, filtered_classes
+    #
+    # def to_image_coords(self, boxes, height, width):
+    #     """
+    #     The original box coordinate output is normalized, i.e [0, 1].
+    #
+    #     This converts it back to the original coordinate based on the image
+    #     size.
+    #     """
+    #     box_coords = np.zeros_like(boxes)
+    #     box_coords[:, 0] = boxes[:, 0] * height
+    #     box_coords[:, 1] = boxes[:, 1] * width
+    #     box_coords[:, 2] = boxes[:, 2] * height
+    #     box_coords[:, 3] = boxes[:, 3] * width
+    #
+    #     return box_coords
+    #
+    # def draw_boxes(self, image, boxes, classes, thickness=4):
+    #     """Draw bounding boxes on the image"""
+    #     #image = Image.fromarray(image)
+    #     ###
+    #     # For reversing the operation:
+    #     # im_np = np.asarray(im_pil)
+    #     ###
+    #     draw = ImageDraw.Draw(image)
+    #     for i in range(len(boxes)):
+    #         bot, left, top, right = boxes[i, ...]
+    #         class_id = int(classes[i])
+    #         color = self.COLOR_LIST[class_id]
+    #         draw.line([(left, top), (left, bot), (right, bot), (right, top), (left, top)], width=thickness, fill=color)
 
             #image = cv2.rectangle(image, start_point, end_point, color, thickness)
             #cv2.rectangle(image, (left, top), (right, bot), (128,128,128), 2)
 
-    def load_graph(self, graph_file):
-        """Loads a frozen inference graph"""
-        graph = tf.Graph()
-        with graph.as_default():
-            od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(graph_file, 'rb') as fid:
-                serialized_graph = fid.read()
-                od_graph_def.ParseFromString(serialized_graph)
-                tf.import_graph_def(od_graph_def, name='')
-        return graph
-
-    def detect(self, path_to_image):
-
-        # Load a sample image.
-        #image = Image.open(path_to_image)
-        image = cv2.imread(path_to_image)
-        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        #print(image)
-        #image_np = np.asarray(image, dtype=np.uint8)
-        image_np = np.asarray(image)
-        print("After asarray")
-        print(image_np.shape)
-        image_np = np.expand_dims(image_np, 0)
-
-        with tf.Session(graph=self.detection_graph) as sess:
-            # Actual detection.
-            (boxes, scores, classes) = sess.run([self.detection_boxes, self.detection_scores, self.detection_classes],
-                                                feed_dict={self.image_tensor: image_np})
-
-            # Remove unnecessary dimensions
-            boxes = np.squeeze(boxes)
-            scores = np.squeeze(scores)
-            classes = np.squeeze(classes)
-
-            confidence_cutoff = 0.8
-            # Filter boxes with a confidence score less than `confidence_cutoff`
-            boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
-
-            # The current box coordinates are normalized to a range between 0 and 1.
-            # This converts the coordinates actual location on the image.
-            height = image_np.shape[0]
-            width = image_np.shape[1]
-            box_coords = self.to_image_coords(boxes, height, width)
-            print("Coordinates", box_coords)
-            print("classes", classes)
-            # Each class with be represented by a differently colored box
-            self.draw_boxes(image, box_coords, classes)
+    # def load_graph(self, graph_file):
+    #     """Loads a frozen inference graph"""
+    #     graph = tf.Graph()
+    #     with graph.as_default():
+    #         od_graph_def = tf.GraphDef()
+    #         with tf.gfile.GFile(graph_file, 'rb') as fid:
+    #             serialized_graph = fid.read()
+    #             od_graph_def.ParseFromString(serialized_graph)
+    #             tf.import_graph_def(od_graph_def, name='')
+    #     return graph
+    #
+    # def detect(self, path_to_image):
+    #
+    #     # Load a sample image.
+    #     #image = Image.open(path_to_image)
+    #     image = cv2.imread(path_to_image)
+    #     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #     #print(image)
+    #     #image_np = np.asarray(image, dtype=np.uint8)
+    #     image_np = np.asarray(image)
+    #     print("After asarray")
+    #     print(image_np.shape)
+    #     image_np = np.expand_dims(image_np, 0)
+    #
+    #     with tf.Session(graph=self.detection_graph) as sess:
+    #         # Actual detection.
+    #         (boxes, scores, classes) = sess.run([self.detection_boxes, self.detection_scores, self.detection_classes],
+    #                                             feed_dict={self.image_tensor: image_np})
+    #
+    #         # Remove unnecessary dimensions
+    #         boxes = np.squeeze(boxes)
+    #         scores = np.squeeze(scores)
+    #         classes = np.squeeze(classes)
+    #
+    #         confidence_cutoff = 0.8
+    #         # Filter boxes with a confidence score less than `confidence_cutoff`
+    #         boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
+    #
+    #         # The current box coordinates are normalized to a range between 0 and 1.
+    #         # This converts the coordinates actual location on the image.
+    #         height = image_np.shape[0]
+    #         width = image_np.shape[1]
+    #         box_coords = self.to_image_coords(boxes, height, width)
+    #         print("Coordinates", box_coords)
+    #         print("classes", classes)
+    #         # Each class with be represented by a differently colored box
+    #         self.draw_boxes(image, box_coords, classes)
 
             #plt.figure(figsize=(12, 8))
             #plt.imshow(image)
 
 
-    def get_labels(self, filename="labels.csv", image_folder="data/*"):
-        labels=[]
-        f = open(filename, "w")
-
-        for name in glob.glob(image_folder):
-            labels.append(self.get_classification(cv2.imread(name)))
-            f.write(str(labels[-1])+",\n")
-        print(labels)
-        counter = collections.Counter(labels)
-        print(counter)
-        print("UNKNOWN=4, GREEN=2, YELLOW=1, RED=0")
-
-
-    def pipeline(self,img):
-        draw_img = Image.fromarray(img)
-        boxes, scores, classes = sess.run([self.detection_boxes, self.detection_scores, self.detection_classes], feed_dict={self.image_tensor: np.expand_dims(img, 0)})
-        # Remove unnecessary dimensions
-        boxes = np.squeeze(boxes)
-        scores = np.squeeze(scores)
-        classes = np.squeeze(classes)
-
-        confidence_cutoff = 0.8
-        # Filter boxes with a confidence score less than `confidence_cutoff`
-        boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
-
-        # The current box coordinates are normalized to a range between 0 and 1.
-        # This converts the coordinates actual location on the image.
-        width, height = draw_img.size
-        box_coords = self.to_image_coords(boxes, height, width)
-
-        # Each class with be represented by a differently colored box
-        self.draw_boxes(draw_img, box_coords, classes)
-        return np.array(draw_img)
+    # def get_labels(self, filename="labels.csv", image_folder="data/*"):
+    #     labels=[]
+    #     f = open(filename, "w")
+    #
+    #     for name in glob.glob(image_folder):
+    #         labels.append(self.get_classification(cv2.imread(name)))
+    #         f.write(str(labels[-1])+",\n")
+    #     print(labels)
+    #     counter = collections.Counter(labels)
+    #     print(counter)
+    #     print("UNKNOWN=4, GREEN=2, YELLOW=1, RED=0")
+    #
+    #
+    # def pipeline(self,img):
+    #     draw_img = Image.fromarray(img)
+    #     boxes, scores, classes = sess.run([self.detection_boxes, self.detection_scores, self.detection_classes], feed_dict={self.image_tensor: np.expand_dims(img, 0)})
+    #     # Remove unnecessary dimensions
+    #     boxes = np.squeeze(boxes)
+    #     scores = np.squeeze(scores)
+    #     classes = np.squeeze(classes)
+    #
+    #     confidence_cutoff = 0.8
+    #     # Filter boxes with a confidence score less than `confidence_cutoff`
+    #     boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
+    #
+    #     # The current box coordinates are normalized to a range between 0 and 1.
+    #     # This converts the coordinates actual location on the image.
+    #     width, height = draw_img.size
+    #     box_coords = self.to_image_coords(boxes, height, width)
+    #
+    #     # Each class with be represented by a differently colored box
+    #     self.draw_boxes(draw_img, box_coords, classes)
+    #     return np.array(draw_img)
 
 
 if __name__ == '__main__':

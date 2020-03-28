@@ -15,6 +15,8 @@ Team consists of four individuals from Germany, Spain and the United States.
 |------------------------|---------------|-----------------------
 | <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
 | <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
 
 
 

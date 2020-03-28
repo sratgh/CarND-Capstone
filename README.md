@@ -202,6 +202,6 @@ Specific to these libraries, the simulator grader and Carla use the following:
 We are working on a fix to line up the OpenCV versions between the two.
 
 ## Literature cited
-* Willow Garage, 2010, published [online](file:///Users/stephanstudener/Desktop/ROScheatsheet.pdf): The ROS-Cheat-Sheet.
+* Willow Garage, 2010, published [online](https://mirror.umd.edu/roswiki/attachments/de/ROScheatsheet.pdf): The ROS-Cheat-Sheet.
 * Jason M. O'Kane, 2014, published by the University of South Carolina [online](https://www.cse.sc.edu/~jokane/agitr/agitr-letter.pdf): A Gentle Introduction to ROS
 * Sigur Skogestad, 2005, published by Wiley: Multivariable Feedback Control

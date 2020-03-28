@@ -64,7 +64,25 @@ The nodes and their responsibilities are explained in the following.
 ### Control of Longitudinal and Lateral Vehicle Dynamics: The _twist_controller_-Package
 In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above): 
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
-* twist_controller.py: This is a helper file, which keeps the class for the control algorithm.
+* twist_controller.py: This file keeps the class for the control algorithm.
+The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). This parameters are
+* The update frequency of the commands for controlling the longitudinal and lateral vehicle dynamics:
+```python 
+TWIST_CONTROLLER_UPDATE_FREQUENCY
+```
+* The proportional gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
+```python 
+KP
+```
+* The integral gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
+```python 
+KI
+```
+* The differential gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
+```python 
+KD
+```
+
 
 ### Traffic Light Detection and Classification: The _tl_detector_-Package
 ### Pathplaning: The _waypoint_updater_-Package
@@ -169,3 +187,8 @@ Specific to these libraries, the simulator grader and Carla use the following:
 | OpenMP | N/A | N/A |
 
 We are working on a fix to line up the OpenCV versions between the two.
+
+## Literature cited
+* Willow Garage, 2010, published [online](file:///Users/stephanstudener/Desktop/ROScheatsheet.pdf): The ROS-Cheat-Sheet.
+* Jason M. O'Kane, 2014, published by the University of South Carolina [online](https://www.cse.sc.edu/~jokane/agitr/agitr-letter.pdf): A Gentle Introduction to ROS
+* Sigur Skogestad, 2005, published by Wiley: Multivariable Feedback Control

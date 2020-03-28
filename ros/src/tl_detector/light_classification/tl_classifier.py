@@ -432,12 +432,8 @@ class TLClassifier(object):
             # Each class with be represented by a differently colored box
             self.draw_boxes(image, box_coords, classes)
 
-            plt.figure(figsize=(12, 8))
-            plt.imshow(image)
-            plt.show()
-
-        return image
-
+            #plt.figure(figsize=(12, 8))
+            #plt.imshow(image)
 
     def time_detection(self, sess, img_height, img_width, runs=10):
         image_tensor = sess.graph.get_tensor_by_name('image_tensor:0')

@@ -27,11 +27,14 @@ The teamlead takes responsibility to setup an integration & working environment.
 Stephan Studener and Simon Rudolph act as developers for control of longitudinal and lateral vehicle dynamics.
 The developers for vehicle controls take responsibility for control of the longitudinal and lateral dynamics dbw_node.py and twist_controller.py.
 ### Developers for Traffic Light Detection and Classification
-### Developers for Pathplaning
+Simon Rudolph and Zihao Zhang work together to detect and classify the obstacles that the car may find during its path.
+### Developers for Path Planning
+Stephan Studener and Mario de la Rosa are in charge of implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in waypoint_updater.py.
 ### Communication and Project Setup
 The team follows the Kanban to reach it's objectives and meet twice a day for a "daily scrum". This is necessary for everbody to stay in sync when working in very different time zones. The team lead set up the daily scrum as a Google Hangout using Google calendar.
 The code base is shared in the team lead's GitHub Repository (this repository).
 To manage & communicate progress and throwbacks (bugs), a Kanban-Board is used, that is provided by GitHub.
+
 ## Conventions 
 This section wraps up coding and committing convetions that have been applied.
 ### Coding Conventions: Typing, Language, Global Variables,..
@@ -63,7 +66,7 @@ TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 ```
 ### Committing Culture: Language, Message Style, Features, Fixes,..
 The following conventions apply to committing to the repository:
-* Committs must have a description that explains why the changes have been made.
+* Commits must have a description that explains why the changes have been made.
 * Commits are either features or fixes.
 * Commits which add new features must have a description that begin with _feat:_
 * Commits which fix something (including missing documentation) must have a description that begin with _fix:_
@@ -72,6 +75,7 @@ The following conventions apply to committing to the repository:
 The following image shows the architecture of the software stack, that is completely based on the robot-operating system (ROS).
 ![Final project ros graph](imgs/final-project-ros-graph-v2.png)
 The nodes and their responsibilities are explained in the following.
+
 ### Control of Longitudinal and Lateral Vehicle Dynamics: The _twist_controller_-Package
 In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above): 
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
@@ -97,8 +101,27 @@ KD
 ```
 
 
-### Traffic Light Detection and Classification: The _tl_detector_-Package
-### Pathplaning: The _waypoint_updater_-Package
+### Traffic Light Detection and Classification: The _tl_detector_ - Package
+
+
+### Path planning: The _waypoint_updater_ - Package
+The path planning algorithm defines the final waypoints to be followed by the car. In order to compute this path, our class receives the base waypoints and it should select those to be commanded.
+
+This node is subscribed to the following topics:
+*_current_pose_
+*_base_waypoints_: publishes a list of all waypoints for the track, so this list includes waypoints
+                     both before and after the vehicle
+*_traffic_waypoint_: it is the index of the waypoint for nearest upcoming red light's stop line
+
+And it publishes final_waypoints, which are the list of waypoints to be followed.
+
+There are two parameters that can be tuned: 
+*_LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
+*_MAX_DECEL_: it is the maximum deceleration to be commanded.
+
+When a traffic waypoint index is received, commanded velocity is decreased gradually from maximum velocity to zero as depicted in the following figure.
+
+<img src="./data/decelerate_waypoints.png" alt="Stephan Studener" width="300">
 
 ## Installation
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).

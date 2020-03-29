@@ -10,8 +10,28 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import os
 
+# This calibration paramter debounces the light state
+# received from the camera, such that toggeling between
+# different states is avoided in case the tl_classifier
+# is not sure
 STATE_COUNT_THRESHOLD = 3
+# This calibration paramter decides if images are saved
+# to the linux-filesystem. This may sacrifice some computational
+# power in favour of having the images for later analysis.
+SAVE_CAMERA_IMAGES_IS_ACTIVE = True
+# This calibration paramter decides if the traffic classifer
+# light classifer is used or the state of the traffic light
+# is taken from the simulator. Turn this to True only when
+# using the code in the simulator!
+USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = True
+# This calibration paramter renders the rate for
+# proceesing images and detecting traffic lights
+# It should be chosen by ansering the question how fast
+# do images change and traffic lights disappear?
+# Unit is Hz
+TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 5
 
 class TLDetector(object):
     def __init__(self):
@@ -48,8 +68,25 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        self.directory_for_images = '/data/'
+        self.image_counter = 0
 
-        rospy.spin()
+        #rospy.spin()
+        self.loop()
+
+    def loop(self):
+        rate = rospy.Rate(TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY)
+        while not rospy.is_shutdown():
+            rospy.loginfo("tl_detector: Call to the traffic light detector.")
+            if not None in (self.waypoints,
+                            self.pose,
+                            self.camera_image):
+                self.process_traffic_lights()
+            else:
+                rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
+
+
+            rate.sleep()
 
     def pose_cb(self, msg):
         self.pose = msg
@@ -70,6 +107,10 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+        if SAVE_CAMERA_IMAGES_IS_ACTIVE:
+            self.save_image(msg)
+
+
         light_wp, state = self.process_traffic_lights()
 
         '''
@@ -90,7 +131,16 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    def get_closest_waypoint(self, pose):
+    def save_image(self, img):
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+        img.encoding = "rgb8"
+        cv_image = CvBridge().imgmsg_to_cv2(img, "bgr8")
+        file_name = curr_dir + self.directory_for_images+ 'img_'+'%06d'% self.image_counter +'.png'
+        cv2.imwrite(file_name, cv_image)
+        self.image_counter += 1
+        rospy.loginfo("tl_detector.py: Camera image saved to %s!", file_name)
+
+    def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
@@ -100,8 +150,9 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
-        return 0
+        closest_idx = self.waypoints.query([x, y], 1)[1]
+
+        return closest_idx
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -113,14 +164,21 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        if(not self.has_image):
-            self.prev_light_loc = None
-            return False
 
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        # Return the state of the light for testing
+        if USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR:
+            rospy.loginfo("tl_detector.py: Traffic light state taken from simulator: %s", str(light.state))
+            return light.state
 
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
+
+        # if(not self.has_image):
+        #     self.prev_light_loc = None
+        #     return False
+        #
+        # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        #
+        # #Get classification
+        # return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -132,18 +190,31 @@ class TLDetector(object):
 
         """
         light = None
+        line_wp_idx = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
         if(self.pose):
-            car_position = self.get_closest_waypoint(self.pose.pose)
+            car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
         #TODO find the closest visible traffic light (if one exists)
+        diff = len(self.waypoints.waypoints)
+        for i, light in enumerate(self.lights):
+            # Get stop line waypoint index
+            line = stop_line_positions[i]
+            temp_wp_idx = self.get_closest_waypoint(line[0], line[1])
+            # Find closest stop line waypoint index
+            d = temp_wp_idx - car_wp_idx
+            if d >= 0 and d < diff:
+                diff = d
+                closest_light = light
+                line_wp_idx = temp_wp_idx
 
         if light:
             state = self.get_light_state(light)
             return light_wp, state
-        self.waypoints = None
+        #self.waypoints = None
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':

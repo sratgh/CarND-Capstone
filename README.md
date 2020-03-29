@@ -13,16 +13,16 @@ Team consists of four individuals from Germany, Spain and the United States.
 
 |     Image                   |     Name      |  LinkedIn or GitHub
 |------------------------|---------------|-----------------------
-| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
-| <img src="./data/Mario_delaRosa.jpg" alt="Mario de la Rosa" width="150" height="150"> | Mario de la Rosa | [Mario](https://www.linkedin.com/in/mardetri/) 
-| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
-| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/) 
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/)
+| <img src="./data/Mario_delaRosa.jpg" alt="Mario de la Rosa" width="150" height="150"> | Mario de la Rosa | [Mario](https://www.linkedin.com/in/mardetri/)
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/)
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/)
 
 
 
 ### Teamlead & Integration Engineer
-Simon Rudolph takes the role of the team lead. 
-The teamlead takes responsibility to setup an integration & working environment. He owns the repository, manages branches and is the source of truth with respect to running the integrated software stack against project objectives in his environment (Udacity's Simulator running on a MacBook Pro and ROS running in a virtual machine on the same hardware). 
+Simon Rudolph takes the role of the team lead.
+The teamlead takes responsibility to setup an integration & working environment. He owns the repository, manages branches and is the source of truth with respect to running the integrated software stack against project objectives in his environment (Udacity's Simulator running on a MacBook Pro and ROS running in a virtual machine on the same hardware).
 ### Developers for Control of Longitudinal and Lateral Vehicle Dynamics
 Stephan Studener and Simon Rudolph act as developers for control of longitudinal and lateral vehicle dynamics.
 The developers for vehicle controls take responsibility for control of the longitudinal and lateral dynamics dbw_node.py and twist_controller.py.
@@ -35,12 +35,12 @@ The team follows the Kanban to reach it's objectives and meet twice a day for a 
 The code base is shared in the team lead's GitHub Repository (this repository).
 To manage & communicate progress and throwbacks (bugs), a Kanban-Board is used, that is provided by GitHub.
 
-## Conventions 
+## Conventions
 This section wraps up coding and committing convetions that have been applied.
 ### Coding Conventions: Typing, Language, Global Variables,..
 The following conventions apply to the code base:
 * The source code is written in English.
-* Calibration parameters must be put into ros-nodes. These paramters may be changed before compile time to tune the behaviour of the code, e.g. the parameters of the PID-Controller. Example (see ros/src/twist_controller/dbw_node.py): 
+* Calibration parameters must be put into ros-nodes. These paramters may be changed before compile time to tune the behaviour of the code, e.g. the parameters of the PID-Controller. Example (see ros/src/twist_controller/dbw_node.py):
 ```python
 
 TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
@@ -77,26 +77,26 @@ The following image shows the architecture of the software stack, that is comple
 The nodes and their responsibilities are explained in the following.
 
 ### Control of Longitudinal and Lateral Vehicle Dynamics: The _twist_controller_-Package
-In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above): 
+In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above):
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
 * twist_controller.py: This file keeps the class for the control algorithm.
 
 
 The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). This parameters are
 * The update frequency of the commands for controlling the longitudinal and lateral vehicle dynamics:
-```python 
+```python
 TWIST_CONTROLLER_UPDATE_FREQUENCY
 ```
 * The proportional gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
-```python 
+```python
 KP
 ```
 * The integral gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
-```python 
+```python
 KI
 ```
 * The differential gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
-```python 
+```python
 KD
 ```
 
@@ -115,7 +115,7 @@ This node is subscribed to the following topics:
 
 And it publishes final_waypoints, which are the list of waypoints to be followed.
 
-There are two parameters that can be tuned: 
+There are two parameters that can be tuned:
 * _LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
 * _MAX_DECEL_: it is the maximum deceleration to be commanded.
 
@@ -185,11 +185,34 @@ pip install -r requirements.txt
 3. Make and run styx
 ```bash
 cd ros
+catkin_make clean (OPTIONAL)
 catkin_make
 source devel/setup.sh
 roslaunch launch/styx.launch
 ```
 4. Run the simulator
+
+### Tipps & Tricks for problems with Docker
+The docker installation itself was quite straightforward for me (installed on mac). After having opened the docker environment I tried installing the requirements via the above command
+```bash
+cd CarND-Capstone
+pip install -r requirements.txt
+```
+
+This did not go through without errors. It complained about the python package mock. Therefore I first had to update pip itself inside the docker container with
+```bash
+pip install --upgrade pip
+```
+
+I then run
+```bash
+cd CarND-Capstone
+pip install -r requirements.txt
+pip install mock
+```
+After this detour it worked for me.
+
+
 
 ### Real world testing
 1. Download [training bag](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/traffic_light_bag_file.zip) that was recorded on the Udacity self-driving car.
@@ -223,6 +246,22 @@ Specific to these libraries, the simulator grader and Carla use the following:
 | OpenMP | N/A | N/A |
 
 We are working on a fix to line up the OpenCV versions between the two.
+
+### Most important ROS commands
+`rosnode list` Lists all ros nodes
+
+`rosnode info <any node i.e. "/waypoint_loader" >` Lists specific information about that node
+
+`rostopic list` Lists all ros topics
+
+`rostopic info <any topic i.e. "/base_waypoints" >` Lists specific information about that topic
+
+`rosmsg info <any message i.e. geometry_msgs/Twist>` Lists the specific message information
+
+`rosed geometry_msgs Twist.msg` Lists even more information about the message Twist.msg
+
+`rostopic echo <any topic i.e. "/base_waypoints">` Echos information about specific topic
+
 
 ## Literature cited
 * Willow Garage, 2010, published [online](https://mirror.umd.edu/roswiki/attachments/de/ROScheatsheet.pdf): The ROS-Cheat-Sheet.

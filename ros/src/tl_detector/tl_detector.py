@@ -7,7 +7,7 @@ from styx_msgs.msg import Lane, Waypoint
 from scipy.spatial import KDTree
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-#from light_classification.tl_classifier import TLClassifier
+from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
@@ -68,7 +68,14 @@ class TLDetector(object):
         self.stop_line_positions = self.config['stop_line_positions']
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
         self.bridge = CvBridge()
-        #self.light_classifier = TLClassifier()
+        self.light_classifier = TLClassifier()
+        try:
+            self.light_classifier.load_model("light_classification/tl_classifier_mobilenet.h5")
+        except ValueError:
+            print("Cannot find classification model. Check if it exists.")
+            USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = True
+            rospy.loginfo("tl_detector: Since no classification model can be found, set USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR to True")
+
         self.listener = tf.TransformListener()
         self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
@@ -180,24 +187,38 @@ class TLDetector(object):
         """
 
         # Return the state of the light for testing
-        if USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR:
+        if not USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR:
+
+            # Load image from camera to variable
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+
+            # Preprocess image (Normalizing, Cropping, converting to array, expanding in dimensions)
+            pred_img = self.light_classifier.preprocess_image(img=cv_image)
+
+            # Call predict function and return classname as string (Therefore the classifier is independent from ROS Message types and can be tested outside the ROS environment)
+            classname = self.light_classifier.predict(pred_img)
+
+            # Map the predicted string to a Traffic Light State
+            if classname == "red":
+                rospy.loginfo("tl_detector.py: Red light detected, publishing: %s", str(TrafficLight.RED))
+                return TrafficLight.RED
+            elif classname == "yellow":
+                rospy.loginfo("tl_detector.py: Yelllow light detected, publishing: %s", str(TrafficLight.YELLOW))
+                return TrafficLight.YELLOW
+            elif classname == "green" or classname == "none":
+                rospy.loginfo("tl_detector.py: Green light detected, publishing: %s", str(TrafficLight.GREEN))
+                return TrafficLight.GREEN
+            else:
+                rospy.loginfo("tl_detector.py: Unknown class from traffic light classification, publishing: %s", str(TrafficLight.UNKNOWN))
+
+        else:
             rospy.loginfo("tl_detector.py: Traffic light state taken from simulator!")
             return light.state
 
-        else:
-            rospy.loginfo("tl_detector.py: Traffic light classification not yet ready, publishing: %s", str(TrafficLight.UNKNOWN))
-            TrafficLight.UNKNOWN
-            #THIS IS WHERE THE CLASSIFIER GOES
+        if not self.has_image:
+            self.prev_light_loc = None
+            return TrafficLight.UNKNOWN
 
-
-        # if(not self.has_image):
-        #     self.prev_light_loc = None
-        #     return False
-        #
-        # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-        #
-        # #Get classification
-        # return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """

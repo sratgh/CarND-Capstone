@@ -1,16 +1,12 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-#import matplotlib
-#matplotlib.use('Agg')
-#from styx_msgs.msg import TrafficLight
+from __future__ import absolute_import, division, print_function
+
 import cv2
 import numpy as np
 import glob
-#from styx_msgs.msg import TrafficLight
+from styx_msgs.msg import TrafficLight
 import collections
-
 import tensorflow as tf
 
-#import matplotlib.pyplot as plt
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageColor
@@ -22,17 +18,15 @@ from scipy.stats import norm
 #from moviepy.editor import VideoFileClip
 #from IPython.display import HTML
 #import IPython.display as display
-
 #plt.style.use('ggplot')
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import image
-#from keras_applications.mobilenet import MobileNetV2
 from keras.models import Model
 from keras.applications import MobileNet
 from keras.layers import GlobalAveragePooling2D, Dense
 import os
-import pathlib
+#import pathlib
 
 
 class TLClassifier(object):
@@ -66,13 +60,15 @@ class TLClassifier(object):
         # Member variable indicating a red yellow traffic light
         self.yellow_light = False
 
-        # Constants
+        # Training parmeters
         self.BATCH_SIZE = 32
         self.IMG_HEIGHT = 224
         self.IMG_WIDTH = 224
         self.CLASS_NAMES = None
         self.EPOCHS = 10
         self.VALIDATION_STEPS=8
+        self.trained_model = None
+        self.get_labels("light_classification/train/")
         # Frozen inference graph files. NOTE: change the path to where you saved the models.
         #self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
         #self.RFCN_GRAPH_FILE = 'rfcn_resnet101_coco_11_06_2017/frozen_inference_graph.pb'
@@ -104,13 +100,16 @@ class TLClassifier(object):
         '''
         Get labels from folder structure
         '''
-        train_dir = pathlib.Path(train_dir)
+        #train_dir = pathlib.Path(train_dir)
+        #print(train_dir)
+        #print(glob.glob(train_dir+"*"))
 
-        image_count = len(list(train_dir.glob('*.png')))
+        image_count = len(list(glob.glob(train_dir+'*.png')))
         print("image_count", image_count)
-
+        #print(glob.glob(train_dir+'*'))
         # Get classes/labels from folder structure
-        self.CLASS_NAMES = np.array([item.name for item in train_dir.glob('*') if item.name != "LICENSE.txt"])
+        self.CLASS_NAMES = np.array([item.split('/')[-1] for item in glob.glob(train_dir+'*') if item.split('/')[-1] != "LICENSE.txt"])
+
         print("CLASS_NAMES", self.CLASS_NAMES)
 
 
@@ -162,22 +161,25 @@ class TLClassifier(object):
             model = self.retrain_weights(model, train_data_gen, valid_data_gen)
             self.save_model(model, "tl_classifier_mobilenet.h5")
         elif mode == "predict":
-            model = self.load_model("tl_classifier_mobilenet.h5")
-            pred_img = self.load_image(pred_img_name)
-
-            return self.predict(model, pred_img)
+            pred_img = self.preprocess_image(filename=pred_img_name)
+            return self.predict(pred_img)
         else:
             raise ValueError("Invalid mode. Valid modes are either 'train' or 'predict'")
 
-    def load_image(self, filename):
+    def preprocess_image(self, filename="", img=None):
         '''
-        Loads a single image
+        Loads a single image with either a filename or a loaded image already
         '''
-        img = image.load_img(filename, target_size=(self.IMG_WIDTH, self.IMG_HEIGHT))
+        if filename:
+            img = image.load_img(filename, target_size=(self.IMG_WIDTH, self.IMG_HEIGHT))
+        else:
+            img = cv2.resize(img, (self.IMG_WIDTH, self.IMG_HEIGHT))
+
+        # TODO: Cropping
+        # ...
+
         img = np.array(img).astype('float32')/255
         img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3] = (BATCHSIZE, HIGHT, WIDHT, CHANNEL)
-
-        #np_image = transform.resize(np_image, (self.IMG_WIDTH, self.IMG_HEIGHT, 3))
 
         return img
 
@@ -224,10 +226,8 @@ class TLClassifier(object):
         '''
         Loads a model
         '''
-        model = self.create_model()
-        model.load_weights(filename)
-        return model
-
+        self.trained_model = self.create_model()
+        self.trained_model.load_weights(filename)
 
     def create_model(self):
         '''
@@ -239,18 +239,18 @@ class TLClassifier(object):
         x1=GlobalAveragePooling2D()(x)
         x2=Dense(1024,activation='relu')(x1) # we add dense layers so that the model can learn more complex functions and classify for better results.
         x3=Dense(512,activation='relu')(x2) # dense layer 3
-        preds=Dense(self.CLASS_NAMES, activation='softmax')(x3) # final layer with softmax activation
+        preds=Dense(len(self.CLASS_NAMES), activation='softmax')(x3) # final layer with softmax activation
 
         model=Model(inputs=base_model.input,outputs=preds)
 
         return model
 
-
-
-    def predict(self, model, image):
-
-        return model.predict(np.array(image))
-
+    def predict(self, image):
+        '''
+        Predicts the class of the given image
+        '''
+        prob_vect = self.trained_model.predict(np.array(image))
+        return self.CLASS_NAMES[np.argmax(prob_vect, axis=-1)]
 
     def get_classification(self, image):
         """
@@ -472,6 +472,7 @@ if __name__ == '__main__':
     #     # write to file
     #     new_clip.write_videofile('result.mp4')
     cls.pipeline(mode="train", train_dir="train/", valid_dir="valid/")
+    cls.load_model("tl_classifier_mobilenet.h5")
     print(cls.pipeline(mode="predict", pred_img_name="test/red_traffic_light.png"))
     print(cls.pipeline(mode="predict", pred_img_name="test/yellow_traffic_light.png"))
     print(cls.pipeline(mode="predict", pred_img_name="test/green_traffic_light.png"))

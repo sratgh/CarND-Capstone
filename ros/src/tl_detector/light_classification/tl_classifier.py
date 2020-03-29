@@ -175,8 +175,8 @@ class TLClassifier(object):
         '''
         img = image.load_img(filename, target_size=(self.IMG_WIDTH, self.IMG_HEIGHT))
         img = np.array(img).astype('float32')/255
-        img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3]
-        #(BATCHSIZE, HIGHT; WIDHT; CHANNEL)
+        img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3] = (BATCHSIZE, HIGHT, WIDHT, CHANNEL)
+
         #np_image = transform.resize(np_image, (self.IMG_WIDTH, self.IMG_HEIGHT, 3))
 
         return img
@@ -237,10 +237,9 @@ class TLClassifier(object):
 
         x=base_model.output
         x1=GlobalAveragePooling2D()(x)
-        x2=Dense(1024,activation='relu')(x1) #we add dense layers so that the model can learn more complex functions and classify for better results.
-#         x=Dense(1024,activation='relu')(x) #dense layer 2
-        x3=Dense(512,activation='relu')(x2) #dense layer 3
-        preds=Dense(4,activation='softmax')(x3) #final layer with softmax activation
+        x2=Dense(1024,activation='relu')(x1) # we add dense layers so that the model can learn more complex functions and classify for better results.
+        x3=Dense(512,activation='relu')(x2) # dense layer 3
+        preds=Dense(self.CLASS_NAMES, activation='softmax')(x3) # final layer with softmax activation
 
         model=Model(inputs=base_model.input,outputs=preds)
 

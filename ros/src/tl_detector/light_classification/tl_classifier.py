@@ -1,4 +1,3 @@
-
 from __future__ import absolute_import, division, print_function, unicode_literals
 #import matplotlib
 #matplotlib.use('Agg')
@@ -27,6 +26,7 @@ from scipy.stats import norm
 #plt.style.use('ggplot')
 
 from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing import image
 #from keras_applications.mobilenet import MobileNetV2
 from keras.models import Model
 from keras.applications import MobileNet
@@ -66,7 +66,13 @@ class TLClassifier(object):
         # Member variable indicating a red yellow traffic light
         self.yellow_light = False
 
-
+        # Constants
+        self.BATCH_SIZE = 32
+        self.IMG_HEIGHT = 224
+        self.IMG_WIDTH = 224
+        self.CLASS_NAMES = None
+        self.EPOCHS = 10
+        self.VALIDATION_STEPS=8
         # Frozen inference graph files. NOTE: change the path to where you saved the models.
         #self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
         #self.RFCN_GRAPH_FILE = 'rfcn_resnet101_coco_11_06_2017/frozen_inference_graph.pb'
@@ -94,24 +100,27 @@ class TLClassifier(object):
         # The classification of the object (integer id).
         #self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
-
-    def load_and_train(self, data_dir):
+    def get_labels(self, train_dir="train/"):
         '''
+        Get labels from folder structure
         '''
+        train_dir = pathlib.Path(train_dir)
 
-        # Constants
-        BATCH_SIZE = 32
-        IMG_HEIGHT = 224
-        IMG_WIDTH = 224
-
-        # Folder structure needs to be data/<class>/*.png
-        data_dir = pathlib.Path(data_dir)
-        image_count = len(list(data_dir.glob('*.jpg')))
+        image_count = len(list(train_dir.glob('*.png')))
         print("image_count", image_count)
 
         # Get classes/labels from folder structure
-        self.CLASS_NAMES = np.array([item.name for item in data_dir.glob('*') if item.name != "LICENSE.txt"])
+        self.CLASS_NAMES = np.array([item.name for item in train_dir.glob('*') if item.name != "LICENSE.txt"])
         print("CLASS_NAMES", self.CLASS_NAMES)
+
+
+    def load_datasets(self, train_dir, valid_dir):
+        '''
+        Loads the training and validation dataset
+        '''
+
+        # Folder structure needs to be train/<class/label>/*.png
+        self.get_labels(train_dir)
 
 
         # Create train generator
@@ -120,41 +129,72 @@ class TLClassifier(object):
                                             zoom_range=0.2,
                                             horizontal_flip=True)
 
-        # Create test generator
-        test_datagen = ImageDataGenerator(rescale=1./255)
+        # Create validation generator
+        valid_datagen = ImageDataGenerator(rescale=1./255)
 
+        #STEPS_PER_EPOCH = np.ceil(image_count/BATCH_SIZE)
 
-        STEPS_PER_EPOCH = np.ceil(image_count/BATCH_SIZE)
-
-        train_data_gen = train_datagen.flow_from_directory(directory=str(data_dir),
-                                                     batch_size=BATCH_SIZE,
+        train_data_gen = train_datagen.flow_from_directory(directory=str(train_dir),
+                                                     batch_size=self.BATCH_SIZE,
                                                      shuffle=True,
-                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
+                                                     target_size=(self.IMG_HEIGHT, self.IMG_WIDTH),
                                                      classes = list(self.CLASS_NAMES))
 
-        test_data_gen = test_datagen.flow_from_directory(directory="test/",
-                                                     batch_size=BATCH_SIZE,
+        valid_data_gen = valid_datagen.flow_from_directory(directory=valid_dir,
+                                                     batch_size=self.BATCH_SIZE,
                                                      shuffle=True,
-                                                     target_size=(IMG_HEIGHT, IMG_WIDTH),
+                                                     target_size=(self.IMG_HEIGHT, self.IMG_WIDTH),
                                                      classes = list(self.CLASS_NAMES))
 
-        base_model=MobileNet(input_shape=(224,224,3),weights='imagenet',include_top=False) #imports the mobilenet model and discards the last 1000 neuron layer.
+        return train_data_gen, valid_data_gen
 
-        x=base_model.output
-        x=GlobalAveragePooling2D()(x)
-        x=Dense(1024,activation='relu')(x) #we add dense layers so that the model can learn more complex functions and classify for better results.
-        x=Dense(1024,activation='relu')(x) #dense layer 2
-        x=Dense(512,activation='relu')(x) #dense layer 3
-        preds=Dense(4,activation='softmax')(x) #final layer with softmax activation
+    def pipeline(self, mode="train", pred_img_name=None, train_dir="train/", valid_dir="valid/"):
+        '''
+        Pipeline function that can be used either for training or for usage/prediction
+        mode can be one of:
+        - train
+        - predict
+        '''
 
-        model=Model(inputs=base_model.input,outputs=preds)
+        if mode == "train":
+            train_data_gen, valid_data_gen = self.load_datasets(train_dir, valid_dir)
+            model = self.create_model()
+            model = self.retrain_weights(model, train_data_gen, valid_data_gen)
+            self.save_model(model, "tl_classifier_mobilenet.h5")
+        elif mode == "predict":
+            model = self.load_model("tl_classifier_mobilenet.h5")
+            pred_img = self.load_image(pred_img_name)
+
+            return self.predict(model, pred_img)
+        else:
+            raise ValueError("Invalid mode. Valid modes are either 'train' or 'predict'")
+
+    def load_image(self, filename):
+        '''
+        Loads a single image
+        '''
+        img = image.load_img(filename, target_size=(self.IMG_WIDTH, self.IMG_HEIGHT))
+        img = np.array(img).astype('float32')/255
+        img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3]
+        #(BATCHSIZE, HIGHT; WIDHT; CHANNEL)
+        #np_image = transform.resize(np_image, (self.IMG_WIDTH, self.IMG_HEIGHT, 3))
+
+        return img
+
+
+    def retrain_weights(self, model, train_data_gen, valid_data_gen):
+        '''
+        Re-Trains a part (usually a few of the last layers) of the given model on the
+        basis of the given datasets (training and validation)
+        '''
 
         # Print architecture
         for i,layer in enumerate(model.layers):
             print(i,layer.name)
-
-        for layer in model.layers:
-            layer.trainable=False
+        print(len(model.layers)-3)
+        for i in range(len(model.layers)-3):
+#             layer.trainable=False
+            model.layers[i].trainable = False
         # or if we want to set the first 20 layers of the network to be non-trainable
         # for layer in model.layers[:20]:
         #     layer.trainable=False
@@ -168,14 +208,49 @@ class TLClassifier(object):
         step_size_train=train_data_gen.n//train_data_gen.batch_size
         model.fit_generator(generator=train_data_gen,
                            steps_per_epoch=step_size_train,
-                           epochs=10,
-                           validation_data=test_data_gen,
-                           validation_steps=800)
+                           epochs=self.EPOCHS,
+                           validation_data=valid_data_gen,
+                           validation_steps=self.VALIDATION_STEPS)
+        return model
+
+
+    def save_model(self, model, filename):
+        '''
+        Saves the given model to disk
+        '''
+        model.save(filename)
+
+    def load_model(self, filename):
+        '''
+        Loads a model
+        '''
+        model = self.create_model()
+        model.load_weights(filename)
+        return model
+
+
+    def create_model(self):
+        '''
+        Creates the model on the basis of a mobile net
+        '''
+        base_model=MobileNet(input_shape=(self.IMG_HEIGHT,self.IMG_WIDTH,3), weights='imagenet', include_top=False) #imports the mobilenet model and discards the last 1000 neuron layer.
+
+        x=base_model.output
+        x1=GlobalAveragePooling2D()(x)
+        x2=Dense(1024,activation='relu')(x1) #we add dense layers so that the model can learn more complex functions and classify for better results.
+#         x=Dense(1024,activation='relu')(x) #dense layer 2
+        x3=Dense(512,activation='relu')(x2) #dense layer 3
+        preds=Dense(4,activation='softmax')(x3) #final layer with softmax activation
+
+        model=Model(inputs=base_model.input,outputs=preds)
+
+        return model
+
 
 
     def predict(self, model, image):
 
-        return model.predict(image)
+        return model.predict(np.array(image))
 
 
     def get_classification(self, image):
@@ -397,9 +472,12 @@ if __name__ == '__main__':
     #
     #     # write to file
     #     new_clip.write_videofile('result.mp4')
-
-    images = cls.load_and_train("train/")
-
+    cls.pipeline(mode="train", train_dir="train/", valid_dir="valid/")
+    print(cls.pipeline(mode="predict", pred_img_name="test/red_traffic_light.png"))
+    print(cls.pipeline(mode="predict", pred_img_name="test/yellow_traffic_light.png"))
+    print(cls.pipeline(mode="predict", pred_img_name="test/green_traffic_light.png"))
+    cls.get_labels("train/")
+    #print(cls.CLASS_NAMES)
 
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.
     # labeled_ds = list_ds.map(process_path, num_parallel_calls=AUTOTUNE)

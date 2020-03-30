@@ -27,13 +27,16 @@ The teamlead takes responsibility to setup an integration & working environment.
 Stephan Studener and Simon Rudolph act as developers for control of longitudinal and lateral vehicle dynamics.
 The developers for vehicle controls take responsibility for control of the longitudinal and lateral dynamics dbw_node.py and twist_controller.py.
 ### Developers for Traffic Light Detection and Classification
-Simon Rudolph and Zihao Zhang work together to detect and classify the obstacles that the car may find during its path.
+Stephan Studener takes responsibility for implementing detection of traffic lights based on the available knowledge of the positions of the traffic lights and the car.
+Simon Rudolph and Zihao Zhang work together to detect and classify the traffic light signals that the car approaches.
 ### Developers for Path Planning
-Stephan Studener and Mario de la Rosa are in charge of implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in waypoint_updater.py.
+Mario de la Rosa takes responsibility for implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in _waypoint_updater.py._
 ### Communication and Project Setup
-The team follows the Kanban to reach it's objectives and meet twice a day for a "daily scrum". This is necessary for everbody to stay in sync when working in very different time zones. The team lead set up the daily scrum as a Google Hangout using Google calendar.
-The code base is shared in the team lead's GitHub Repository (this repository).
-To manage & communicate progress and throwbacks (bugs), a Kanban-Board is used, that is provided by GitHub.
+The team follows the Kanban rules to reach it's objectives and meet twice a day for a "daily scrum". 
+This is necessary for everbody to stay in sync when working in very different time zones. 
+The team lead sets up the daily scrum as a Google Hangout using Google calendar.
+The code base as well as the Kanban board is shared in the team lead's GitHub Repository.
+To manage & communicate progress and throwbacks (bugs), the Kanban-Board is used as well.
 
 ## Conventions
 This section wraps up coding and committing convetions that have been applied.
@@ -172,8 +175,14 @@ This node is subscribed to the following topics:
 And it publishes final_waypoints, which are the list of waypoints to be followed.
 
 There are two parameters that can be tuned:
-* _LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
-* _MAX_DECEL_: it is the maximum deceleration to be commanded.
+* This calibration parameter defines the number of waypoints that will be published,
+```python
+LOOKAHEAD_WPS = 200
+```
+* This calibration parameter defines the maximum deceleration to be commanded.
+```python
+MAX_DECEL = .5
+```
 
 When a traffic waypoint index is received, commanded velocity is decreased gradually from maximum velocity to zero as depicted in the following figure.
 

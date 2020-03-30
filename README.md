@@ -27,13 +27,16 @@ The teamlead takes responsibility to setup an integration & working environment.
 Stephan Studener and Simon Rudolph act as developers for control of longitudinal and lateral vehicle dynamics.
 The developers for vehicle controls take responsibility for control of the longitudinal and lateral dynamics dbw_node.py and twist_controller.py.
 ### Developers for Traffic Light Detection and Classification
-Simon Rudolph and Zihao Zhang work together to detect and classify the obstacles that the car may find during its path.
+Stephan Studener takes responsibility for implementing detection of traffic lights based on the available knowledge of the positions of the traffic lights and the car.
+Simon Rudolph and Zihao Zhang work together to detect and classify the traffic light signals that the car approaches.
 ### Developers for Path Planning
-Stephan Studener and Mario de la Rosa are in charge of implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in waypoint_updater.py.
+Mario de la Rosa takes responsibility for implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in _waypoint_updater.py._
 ### Communication and Project Setup
-The team follows the Kanban to reach it's objectives and meet twice a day for a "daily scrum". This is necessary for everbody to stay in sync when working in very different time zones. The team lead set up the daily scrum as a Google Hangout using Google calendar.
-The code base is shared in the team lead's GitHub Repository (this repository).
-To manage & communicate progress and throwbacks (bugs), a Kanban-Board is used, that is provided by GitHub.
+The team follows the Kanban rules to reach it's objectives and meet twice a day for a "daily scrum". 
+This is necessary for everbody to stay in sync when working in very different time zones. 
+The team lead sets up the daily scrum as a Google Hangout using Google calendar.
+The code base as well as the Kanban board is shared in the team lead's GitHub Repository.
+To manage & communicate progress and throwbacks (bugs), the Kanban-Board is used as well.
 
 ## Conventions
 This section wraps up coding and committing convetions that have been applied.
@@ -82,26 +85,82 @@ In the twist controller package two files are subject to change compared to the 
 * twist_controller.py: This file keeps the class for the control algorithm.
 
 
-The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). This parameters are
+The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). These parameters are
 * The update frequency of the commands for controlling the longitudinal and lateral vehicle dynamics:
 ```python
-TWIST_CONTROLLER_UPDATE_FREQUENCY
+# This parameter defines the frquency at which throttle, brake
+# and steering command are send to the vehicle. It must be equal
+# or larger than 10 Hz. Changing this parameter changes the
+# closed loop behavior, i.e. if & how the vehicle follows the
+# reference trajectory. If this paramter is changed, the
+# controller parameters KP, KI, and KD may become invalid.
+TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 ```
-* The proportional gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
+* The gains of the PID-Controller [3] controlling the longitudinal vehicle dynamics by publishing brake and throttle:
 ```python
-KP
+# PID-Controller tuning parameters, here: The proportional gain, 
+# the differential gain (KD) and the integral gain (KI).
+KP = 0.18
+KI = 0.0002
+KD = 3.2
 ```
-* The integral gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
+* The minimum break torque required to keep the vehicle in place:
 ```python
-KI
-```
-* The differential gain of the PID-Controller [3] controlling the longitudinal vehicle dynamics by setting brake and throttle:
-```python
-KD
+# As explained in the walk-through, break torque needed to keep the 
+# vehicle in place.
+TORQUE_TO_KEEP_VEHICLE_STATIONARY = 700  # Nm
 ```
 
 
 ### Traffic Light Detection and Classification: The _tl_detector_ - Package
+This package has two important parts: The detection of traffic lights and the classification of the signal of the traffic lights way ahead of a stop line.
+The detection of traffic lights is based on knowledge of the position of traffic lights in the world and knowledge of the vehicle position in the world.
+Roughly stated the node _tl_detection.py_ works as follows: If the vehicle approaches a traffic light and is sufficiently close, the classifier is invoked
+and fed with the camera image, which is received frequently. The camera looks at the traffic light several times and once, it is assured that the light
+is red, the controller of the longitudinal dynamics is told to bring the vehicle to a full stop. Otherwise the controller of the longitudinal dynamics is told to
+keep the pace. The node tl_detection.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). 
+These parameters are
+
+* A threshold defining how often a traffic light has to be detected as red before the node publishes the traffic light ahead as being red.  This avoids toggeling to a certain degree when the classifier toggles.
+```python
+# This calibration paramter debounces the light state
+# received from the camera, such that toggeling between
+# different states is avoided in case the tl_classifier
+# is not sure
+STATE_COUNT_THRESHOLD = 3
+```
+* This calibration parameter activates a feature: Each image that is received by tl_detector is saved to disc when this parameter is True. Note: Inside ./ros/src/tl_detection there must be a folder called data. Otherwise this will not work. This consumes computational power and might be switched to False in the real vehicle.
+```python
+# This calibration paramter decides if images are saved
+# to the linux-filesystem. This may sacrifice some computational
+# power in favour of having the images for later analysis.
+SAVE_CAMERA_IMAGES_IS_ACTIVE = True
+```
+* This calibration paramter allows to use the ground-truth value for traffic lights. This is available only in the simulator. Be sure to swith this to False when running the code in the real vehicle.
+```python
+# This calibration paramter decides if the traffic classifer
+# light classifer is used or the state of the traffic light
+# is taken from the simulator. Turn this to True only when
+# using the code in the simulator!
+USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
+```
+* This calibration parameter renders the rate for processing images and detecting traffic lights. It save a lot of computational ressources to turn this down. When it is too small, the vehicle will have moved a lot from where the camera captured an image and stopping in front of a red traffic light might not be possible because informations are not processed in time.
+```python
+# This calibration paramter renders the rate for
+# processing images and detecting traffic lights
+# It should be chosen by ansering the question how fast
+# do images change and traffic lights disappear?
+# Unit is Hz
+TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
+```
+* This paramter is a threshold for triggering the classification of traffic light signals. When the vehicle is too far away from the traffic light (distance is larger than threshold), the camera image is received, but not processed. When the vehicle is close to a traffic light (distance is smaller than threshold), camera images are processed and traffic ligth signals are classified.
+```python
+# This calibration parameter allwos to tune the threshold in meters for paying
+# attention to the state of traffic light. Below that threshold, camea images
+# are processed, above this is not done.
+SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 80
+```
+A remark: This behaviour of this node is made deterministic by adding a _self.loop()_-member function that is called periodically. Although the images are published in a non-deterministic fashion, detection is running at a frequency defined by TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY.
 
 
 ### Path planning: The _waypoint_updater_ - Package
@@ -116,8 +175,14 @@ This node is subscribed to the following topics:
 And it publishes final_waypoints, which are the list of waypoints to be followed.
 
 There are two parameters that can be tuned:
-* _LOOKAHEAD_WPS_: it defines the number of waypoints that will be published,
-* _MAX_DECEL_: it is the maximum deceleration to be commanded.
+* This calibration parameter defines the number of waypoints that will be published,
+```python
+LOOKAHEAD_WPS = 200
+```
+* This calibration parameter defines the maximum deceleration to be commanded.
+```python
+MAX_DECEL = .5
+```
 
 When a traffic waypoint index is received, commanded velocity is decreased gradually from maximum velocity to zero as depicted in the following figure.
 

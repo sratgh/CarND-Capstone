@@ -49,6 +49,12 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.last_wp = -1
+        self.state_count = 0
+        self.directory_for_images = '/data/'
+        self.image_counter = 0
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -77,12 +83,7 @@ class TLDetector(object):
             rospy.loginfo("tl_detector: Since no classification model can be found, set USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR to True")
 
         self.listener = tf.TransformListener()
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
-        self.directory_for_images = '/data/'
-        self.image_counter = 0
+        
         self.loop() #rospy.spin()
 
     def loop(self):
@@ -117,7 +118,6 @@ class TLDetector(object):
 
             else:
                 rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
-
             rate.sleep()
 
 
@@ -228,6 +228,8 @@ class TLDetector(object):
             int: index of waypoint closes to the upcoming stop line for a traffic light (-1 if none exists)
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
+        stop_line_waypoint_index = -1
+        state_of_traffic_light = TrafficLight.UNKNOWN
         light = None
         stop_line_position = None
         stop_line_waypoint_index = None
@@ -252,11 +254,9 @@ class TLDetector(object):
                         stop_light_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
                         state_of_traffic_light = self.get_light_state(light)
                         rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
-                        return stop_line_waypoint_index, state_of_traffic_light
-
-            else:
-                rospy.loginfo("tl_detector: Stop light detection failed.")
-                return -1, TrafficLight.UNKNOWN
+                        
+        rospy.loginfo("tl_detector: Stop light detection failed.")
+        return stop_line_waypoint_index, state_of_traffic_light
 
     def get_index_of_closest_waypoint_to_current_pose(self, pose):
         """

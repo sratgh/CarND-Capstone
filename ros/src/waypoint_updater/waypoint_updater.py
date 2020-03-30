@@ -7,6 +7,7 @@ from scipy.spatial import KDTree
 from std_msgs.msg import Int32
 import numpy as np
 import math
+import tf
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -56,7 +57,7 @@ class WaypointUpdater(object):
             if self.pose and self.base_waypoints and self.waypoint_tree and self.waypoints_2d:
                 # Get closest waypoint
                 self.publish_waypoints(self.get_closest_waypoint_idx())
-
+                self.check_stopline()
             rate.sleep()
 
     # Compute the closest waypoint index
@@ -82,7 +83,6 @@ class WaypointUpdater(object):
 
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
-
         return closest_idx
 
     # Publish the main output final_waypoints
@@ -108,20 +108,54 @@ class WaypointUpdater(object):
 
         return lane
         #pass
-
+    def check_stopline(self):
+        # Get stopline coordinates
+        sl_x = self.base_waypoints.waypoints[self.stopline_wp_idx].pose.pose.position.x
+        sl_y = self.base_waypoints.waypoints[self.stopline_wp_idx].pose.pose.position.y
+        # Check if stopline is ahead or behind vehicle
+        yaw_rad = self.get_yaw()
+        yaw_deg = yaw_rad*180/np.pi
+        
+        yaw_vect = (np.cos(yaw_rad), np.sin(yaw_rad))
+        sl_vect = (sl_x,sl_y)
+        pos_vect = np.array(self.get_car_xy())
+        
+        val = np.dot(yaw_vect, sl_vect - pos_vect)
+        close_wp = self.get_closest_waypoint_idx()
+        sl_wp = self.stopline_wp_idx
+        print('val: ', val, 'close_wp: ', close_wp, 'sl_wp: ', sl_wp)
+        
+    def get_yaw(self):
+        q = self.pose.pose.orientation;
+        q = (q.x, q.y, q.z, q.w)
+        #print(self.pose.pose.orientation)
+        #rotation = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
+        attitude = tf.transformations.euler_from_quaternion(q)
+        return attitude[2]
+    
+    def get_car_xy(self):
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        return x,y
+    
     # Function to decelerate the waypoints between our position and the traffic light
     def decelerate_waypoints(self, waypoints, closest_idx):
         temp = []
+        stop_idx = max(self.stopline_wp_idx - closest_idx -2, 0)
+        print('stop_idx', stop_idx)
         for i, wp in enumerate(waypoints):
             p = Waypoint()
             p.pose = wp.pose
-
-            stop_idx = max(self.stopline_wp_idx - closest_idx -2, 0)
+            
             dist = self.distance(waypoints, i, stop_idx)
-            vel = math.sqrt(2*MAX_DECEL*dist)
+            #vel = math.sqrt(2*MAX_DECEL*dist)
+            vel_coef = (dist/60)**2
+            if vel_coef >1:
+                vel_coef = 1
+            vel = vel_coef* wp.twist.twist.linear.x
             if vel<1.:
                 vel = 0.
-            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+            p.twist.twist.linear.x = vel
             temp.append(p)
 
         return temp

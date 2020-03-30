@@ -149,7 +149,8 @@ class WaypointUpdater(object):
             
             dist = self.distance(waypoints, i, stop_idx)
             #vel = math.sqrt(2*MAX_DECEL*dist)
-            vel_coef = (dist/60)**2
+            #vel_coef = (dist/60)**2
+            vel_coef = 0.0
             if vel_coef >1:
                 vel_coef = 1
             vel = vel_coef* wp.twist.twist.linear.x

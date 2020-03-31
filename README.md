@@ -96,6 +96,9 @@ In the twist controller package two files are subject to change compared to the 
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
 * twist_controller.py: This file keeps the class for the control algorithm.
 
+Control of longitudinal vehicle dynamics is realized by a PID-control featuring anti-wind-up compensation. This means, that the controller is able to deal with the bounded actuator inputs, i.e. throttle and break command is bounded below by zero and above by individual thresholds. When the control law exceeds the bounds, the threshold is commanded and in the same time the value of the integrator state is clamped. The tuning parameters of the controller are initially taken from the "Controls"-Project of this Nanodegree and have been fine-tuned to attain the desired closed-loop-performance.
+Control of the lateral vehicle dynamics is realized by a feedforward control law provided by Udacity, the _yaw_controller_.
+
 
 The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). These parameters are
 * The update frequency of the commands for controlling the longitudinal and lateral vehicle dynamics:

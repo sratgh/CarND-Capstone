@@ -251,7 +251,7 @@ class TLDetector(object):
                         light = self.lights[traffic_light_index]
                         stop_line_index = self.get_index_of_closest_stop_line_to_current_pose(traffic_light_position)
                         stop_line_position = self.get_stop_line_positions()[stop_line_index].pose.pose
-                        stop_light_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
+                        stop_line_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
                         state_of_traffic_light = self.get_light_state(light)
                         rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
                         

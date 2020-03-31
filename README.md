@@ -1,5 +1,17 @@
 # Udacity's Self-Driving Car Engineer Nanodegree: System Integration, the Capstone-Project
-This is team XXX's solution of the capstone project of Udacity's Self Driving Car Engineer Program. The goal of this project is to develop different components of a self driving car software stack and integrate them into an appropriate operating system, the robot operating system (ROS), such that a real car that utilizes this system can navigate a test track in an autonomous manner. The software components implement many different parts of the software stack of an autonomous vehicle: They cover high-level vehicle control law for longitudinal and lateral dynamics, traffic light detection and classification and (simplified) path planing. Before launching the software in a real vehicle, the stack can be tested using Udacity's simulator.
+![The target vehicle](data/Carla.jpg)
+
+
+
+This is a collaborative effort to attain the objectives of the capstone project of Udacity's Self Driving Car Engineer Program. The goal of this project is to develop different components of a self driving car software stack and integrate them into an appropriate operating system, the robot operating system (ROS), such that a real car that utilizes this system can navigate a test track in an autonomous manner. The software components implement many different parts of the software stack of an autonomous vehicle: They cover high-level vehicle control law for longitudinal and lateral dynamics, traffic light detection and classification and (simplified) path planing. Before launching the software in a real vehicle, the stack can be tested using Udacity's simulator.
+
+
+
+
+![The simulator](data/Screenshot.png)
+
+
+
 
 Udacity's original repository with virgin files can be found [here](https://github.com/udacity/CarND-Capstone).
 
@@ -83,6 +95,9 @@ The nodes and their responsibilities are explained in the following.
 In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above):
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
 * twist_controller.py: This file keeps the class for the control algorithm.
+
+Control of longitudinal vehicle dynamics is realized by a PID-control featuring anti-wind-up compensation. This means, that the controller is able to deal with the bounded actuator inputs, i.e. throttle and break command is bounded below by zero and above by individual thresholds. When the control law exceeds the bounds, the threshold is commanded and in the same time the value of the integrator state is clamped. The tuning parameters of the controller are initially taken from the "Controls"-Project of this Nanodegree and have been fine-tuned to attain the desired closed-loop-performance.
+Control of the lateral vehicle dynamics is realized by a feedforward control law provided by Udacity, the _yaw_controller_.
 
 
 The dbw_node.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). These parameters are

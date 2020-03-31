@@ -1,6 +1,6 @@
 # Udacity's Self-Driving Car Engineer Nanodegree: System Integration, the Capstone-Project
-<img src="./data/Carla.jpg" alt="Stephan Studener" width="600" height="450"> |
 This is a collaborative effort to attain the objectives of the capstone project of Udacity's Self Driving Car Engineer Program. The goal of this project is to develop different components of a self driving car software stack and integrate them into an appropriate operating system, the robot operating system (ROS), such that a real car that utilizes this system can navigate a test track in an autonomous manner. The software components implement many different parts of the software stack of an autonomous vehicle: They cover high-level vehicle control law for longitudinal and lateral dynamics, traffic light detection and classification and (simplified) path planing. Before launching the software in a real vehicle, the stack can be tested using Udacity's simulator.
+![The target vehicle](data/Carla.jpg)
 
 Udacity's original repository with virgin files can be found [here](https://github.com/udacity/CarND-Capstone).
 

@@ -16,9 +16,9 @@ MAX_THROTTLE = 0.2
 TAU = 0.5
 TS = 0.02
 # PID-Controller tuning parameters
-KP = 0.18
+KP = 0.05
 KI = 0.002
-KD = 0.0
+KD = 0.5
 
 # As explained in the walk-through, break torque needed to keep the vehicle in place.
 TORQUE_TO_KEEP_VEHICLE_STATIONARY = 700  # Nm
@@ -73,7 +73,7 @@ class Controller(object):
             sample_time=current_time - self.last_time)
         brake = 0
         self.throttle_pub.publish(throttle*10)
-        if linear_vel == 0 and current_vel < 0.1:
+        if linear_vel < 2 and current_vel < 0.1:
             # The vehicle is stopped.
             throttle = 0
             brake = TORQUE_TO_KEEP_VEHICLE_STATIONARY

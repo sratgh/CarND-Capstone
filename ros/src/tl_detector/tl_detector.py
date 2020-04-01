@@ -29,7 +29,7 @@ SAVE_CAMERA_IMAGES_IS_ACTIVE = True
 # light classifer is used or the state of the traffic light
 # is taken from the simulator. Turn this to True only when
 # using the code in the simulator!
-USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
+USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = True
 # This calibration paramter renders the rate for
 # proceesing images and detecting traffic lights
 # It should be chosen by ansering the question how fast
@@ -39,7 +39,7 @@ TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
 # This calibration parameter allwos to tune the threshold in meters for paying
 # attention to the state of traffic light. Below that threshold, camea images
 # are processed, above this is not done.
-SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 80
+SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 100
 
 
 class TLDetector(object):
@@ -77,6 +77,8 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
         self.stop_line_positions = self.config['stop_line_positions']
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
+        self.distance_to_traffic_light_pub = rospy.Publisher('/distance_to_traffic_light', Int32, queue_size=1)
+        self.distance_to_stop_line_pub = rospy.Publisher('/distance_to_stop_line', Int32, queue_size=1)
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
         try:
@@ -198,7 +200,7 @@ class TLDetector(object):
 
                 if traffic_light_waypoint_index > vehicle_index:
                     distance_to_traffic_light = distance(vehicle_position, traffic_light_position)
-
+                    
                     if distance_to_traffic_light < SAFE_DISTANCE_TO_TRAFFIC_LIGHT * 2 and distance_to_traffic_light > 15:
                         traffic_light_state = self.lights[traffic_light_index].state
                         if traffic_light_state == TrafficLight.RED:
@@ -295,18 +297,25 @@ class TLDetector(object):
 
                 if traffic_light_waypoint_index > vehicle_index:
                     distance_to_traffic_light = distance(vehicle_position, traffic_light_position)
-
+                    self.distance_to_traffic_light_pub.publish(distance_to_traffic_light)
                     if distance_to_traffic_light < SAFE_DISTANCE_TO_TRAFFIC_LIGHT:
                         rospy.loginfo("tl_detector: Traffic light ahead: {}".format(distance_to_traffic_light))
                         light = self.lights[traffic_light_index]
                         stop_line_index = self.get_index_of_closest_stop_line_to_current_pose(traffic_light_position)
                         stop_line_position = self.get_stop_line_positions()[stop_line_index].pose.pose
                         stop_line_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
+                        stop_line_waypoint_index -= 4;
+                        stop_line_wp_position = self.waypoints.waypoints[stop_line_waypoint_index].pose.pose.position
+                        distance_to_stop_line = distance(vehicle_position, stop_line_wp_position)
                         state_of_traffic_light = self.get_light_state(light)
+                        self.distance_to_traffic_light_pub.publish(distance_to_traffic_light)
+                        self.distance_to_stop_line_pub.publish(distance_to_stop_line)
                         rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
+                        if stop_line_waypoint_index>vehicle_index:
+                            return stop_line_waypoint_index, state_of_traffic_light
                         
 #         rospy.loginfo("tl_detector: Stop light detection failed.")
-        return stop_line_waypoint_index, state_of_traffic_light
+        return -1, TrafficLight.UNKNOWN
 
     def get_index_of_closest_waypoint_to_current_pose(self, pose):
         """

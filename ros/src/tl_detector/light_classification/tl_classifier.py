@@ -104,8 +104,8 @@ class TLClassifier(object):
         #print(train_dir)
         #print(glob.glob(train_dir+"*"))
 
-        image_count = len(list(glob.glob(train_dir+'*.png')))
-        print("image_count", image_count)
+        self.image_count = len(list(glob.glob(train_dir+'*/*.png')))
+        print("image_count", self.image_count)
         #print(glob.glob(train_dir+'*'))
         # Get classes/labels from folder structure
         self.CLASS_NAMES = np.array([item.split('/')[-1] for item in glob.glob(train_dir+'*') if item.split('/')[-1] != "LICENSE.txt"])
@@ -146,7 +146,7 @@ class TLClassifier(object):
         # Create validation generator
         valid_datagen = ImageDataGenerator(rescale=1./255)
 
-        self.STEPS_PER_EPOCH = np.ceil(image_count/BATCH_SIZE)
+        self.STEPS_PER_EPOCH = np.ceil(self.image_count/self.BATCH_SIZE)
 
         train_data_gen = train_datagen.flow_from_directory(directory=str(train_dir),
                                                      batch_size=self.BATCH_SIZE,
@@ -154,7 +154,7 @@ class TLClassifier(object):
                                                      target_size=(self.IMG_HEIGHT, self.IMG_WIDTH),
                                                      classes = list(self.CLASS_NAMES))
 
-        train_data_gen_ = crop_generator(train_data_gen, 224)
+        #train_data_gen_ = crop_generator(train_data_gen, 224)
 
         valid_data_gen = valid_datagen.flow_from_directory(directory=valid_dir,
                                                      batch_size=self.BATCH_SIZE,
@@ -162,7 +162,7 @@ class TLClassifier(object):
                                                      target_size=(self.IMG_HEIGHT, self.IMG_WIDTH),
                                                      classes = list(self.CLASS_NAMES))
 
-        return train_data_gen_, valid_data_gen
+        return train_data_gen, valid_data_gen
 
     def pipeline(self, mode="train", pred_img_name=None, train_dir="train/", valid_dir="valid/"):
         '''

@@ -17,8 +17,8 @@ TAU = 0.5
 TS = 0.02
 # PID-Controller tuning parameters
 KP = 0.18
-KI = 0.0002
-KD = 3.2
+KI = 0.002
+KD = 0.0
 
 # As explained in the walk-through, break torque needed to keep the vehicle in place.
 TORQUE_TO_KEEP_VEHICLE_STATIONARY = 700  # Nm
@@ -50,7 +50,10 @@ class Controller(object):
         self.v_low_pass_filter = LowPassFilter(TAU, TS)
         self.last_time = rospy.get_time()
         
-        self.ref_vel = rospy.Publisher('/ref_vel', Float32, queue_size=1)
+        self.ref_vel_pub = rospy.Publisher('/ref_vel', Float32, queue_size=1)
+        self.throttle_pub = rospy.Publisher('/throttle', Float32, queue_size=1)
+        self.brake_pub = rospy.Publisher('/brake', Float32, queue_size=1)
+        self.error_vel_pub = rospy.Publisher('/error_vel', Float32, queue_size=1)
 
 
     def control(self, current_vel, dbw_enabled, linear_vel, angular_vel):
@@ -61,14 +64,15 @@ class Controller(object):
         current_time = rospy.get_time()
         current_vel = self.v_low_pass_filter.filt(current_vel)
         error_vel = linear_vel - current_vel
-        self.ref_vel.publish(linear_vel*2.24)
+        ref_vel = linear_vel*2.24
+        self.ref_vel_pub.publish(ref_vel)
         steering = self.yaw_controller.get_steering(
             linear_vel, angular_vel, current_vel)
         throttle = self.throttle_controller.step(
             error=error_vel,
             sample_time=current_time - self.last_time)
         brake = 0
-
+        self.throttle_pub.publish(throttle*10)
         if linear_vel == 0 and current_vel < 0.1:
             # The vehicle is stopped.
             throttle = 0
@@ -81,5 +85,7 @@ class Controller(object):
 
         self.last_vel = current_vel
         self.last_time = rospy.get_time()
-
+        self.error_vel_pub.publish(error_vel)
+        
+        self.brake_pub.publish(brake)
         return throttle, brake, steering

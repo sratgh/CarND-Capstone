@@ -14,6 +14,7 @@ import yaml
 import os
 import sys
 import math
+import numpy as np
 
 # This calibration paramter debounces the light state
 # received from the camera, such that toggeling between
@@ -49,6 +50,15 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.last_wp = -1
+        self.state_count = 0
+        self.directory_for_images = '/data/'
+        self.image_counter = 0
+        self.image_counter_red = 0
+        self.image_counter_yellow = 0
+        self.image_counter_green = 0
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -77,12 +87,7 @@ class TLDetector(object):
             rospy.loginfo("tl_detector: Since no classification model can be found, set USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR to True")
 
         self.listener = tf.TransformListener()
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
-        self.directory_for_images = '/data/'
-        self.image_counter = 0
+        
         self.loop() #rospy.spin()
 
     def loop(self):
@@ -117,7 +122,6 @@ class TLDetector(object):
 
             else:
                 rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
-
             rate.sleep()
 
 
@@ -171,9 +175,51 @@ class TLDetector(object):
         curr_dir = os.path.dirname(os.path.realpath(__file__))
         img.encoding = "rgb8"
         cv_image = CvBridge().imgmsg_to_cv2(img, "bgr8")
-        file_name = curr_dir + self.directory_for_images+ 'img_'+'%06d'% self.image_counter +'.png'
-        cv2.imwrite(file_name, cv_image)
+#         pred_img = self.light_classifier.preprocess_image(img=cv_image)
+        pred_img = cv2.resize(cv_image, (224,224))
+#         pred_img = np.array(img).astype('float32')/255
+#         pred_img = np.expand_dims(img, axis=0)
+        file_name = curr_dir + self.directory_for_images+ 'none/img_'+'%06d'% self.image_counter +'.png'
         self.image_counter += 1
+        stop_line_waypoint_index = -1
+        state_of_traffic_light = TrafficLight.UNKNOWN
+        light = None
+        stop_line_position = None
+        stop_line_waypoint_index = None
+        distance = lambda a,b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
+        if self.pose is not None:
+            vehicle_index = self.get_index_of_closest_waypoint_to_current_pose(self.pose.pose.position)
+            vehicle_position = self.waypoints.waypoints[vehicle_index].pose.pose.position
+            traffic_light_index = self.get_index_of_closest_traffic_light_to_current_pose(vehicle_position)
+
+            if traffic_light_index >= 0:
+                traffic_light_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(self.lights[traffic_light_index].pose.pose.position)
+                traffic_light_position = self.waypoints.waypoints[traffic_light_waypoint_index].pose.pose.position
+
+                if traffic_light_waypoint_index > vehicle_index:
+                    distance_to_traffic_light = distance(vehicle_position, traffic_light_position)
+
+                    if distance_to_traffic_light < SAFE_DISTANCE_TO_TRAFFIC_LIGHT * 2 and distance_to_traffic_light > 15:
+                        traffic_light_state = self.lights[traffic_light_index].state
+                        if traffic_light_state == TrafficLight.RED:
+                            file_name = curr_dir + self.directory_for_images+ 'red/img_'+'%06d'% self.image_counter_red +'.png'
+                            self.image_counter_red += 1
+                            self.image_counter -= 1
+                            cv2.imwrite(file_name, pred_img)
+                        elif traffic_light_state == TrafficLight.YELLOW:
+                            file_name = curr_dir + self.directory_for_images+ 'yellow/img_'+'%06d'% self.image_counter_yellow +'.png'
+                            self.image_counter_yellow += 1
+                            self.image_counter -= 1
+                            cv2.imwrite(file_name, pred_img)
+                        elif traffic_light_state == TrafficLight.GREEN:
+                            file_name = curr_dir + self.directory_for_images+ 'green/img_'+'%06d'% self.image_counter_green +'.png'
+                            self.image_counter_green += 1
+                            self.image_counter -= 1
+                            cv2.imwrite(file_name, pred_img)
+        if self.image_counter % 4 == 0:
+            cv2.imwrite(file_name, pred_img)
+            
+#         self.image_counter += 1
         rospy.loginfo("tl_detector.py: Camera image saved to %s!", file_name)
 
 
@@ -200,16 +246,20 @@ class TLDetector(object):
 
             # Map the predicted string to a Traffic Light State
             if classname == "red":
-                rospy.loginfo("tl_detector.py: Red light detected, publishing: %s", str(TrafficLight.RED))
+#                 rospy.loginfo("tl_detector.py: Red light detected, publishing: %s", str(TrafficLight.RED))
+                rospy.loginfo("Red")
                 return TrafficLight.RED
             elif classname == "yellow":
-                rospy.loginfo("tl_detector.py: Yelllow light detected, publishing: %s", str(TrafficLight.YELLOW))
+#                 rospy.loginfo("tl_detector.py: Yelllow light detected, publishing: %s", str(TrafficLight.YELLOW))
+                rospy.loginfo("Yellow")
                 return TrafficLight.YELLOW
             elif classname == "green" or classname == "none":
-                rospy.loginfo("tl_detector.py: Green light detected, publishing: %s", str(TrafficLight.GREEN))
+#                 rospy.loginfo("tl_detector.py: Green light detected, publishing: %s", str(TrafficLight.GREEN))
+                rospy.loginfo("Green")
                 return TrafficLight.GREEN
             else:
-                rospy.loginfo("tl_detector.py: Unknown class from traffic light classification, publishing: %s", str(TrafficLight.UNKNOWN))
+#                 rospy.loginfo("tl_detector.py: Unknown class from traffic light classification, publishing: %s", str(TrafficLight.UNKNOWN))
+                rospy.loginfo("None")
 
         else:
             rospy.loginfo("tl_detector.py: Traffic light state taken from simulator!")
@@ -228,6 +278,8 @@ class TLDetector(object):
             int: index of waypoint closes to the upcoming stop line for a traffic light (-1 if none exists)
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
+        stop_line_waypoint_index = -1
+        state_of_traffic_light = TrafficLight.UNKNOWN
         light = None
         stop_line_position = None
         stop_line_waypoint_index = None
@@ -249,14 +301,12 @@ class TLDetector(object):
                         light = self.lights[traffic_light_index]
                         stop_line_index = self.get_index_of_closest_stop_line_to_current_pose(traffic_light_position)
                         stop_line_position = self.get_stop_line_positions()[stop_line_index].pose.pose
-                        stop_light_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
+                        stop_line_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
                         state_of_traffic_light = self.get_light_state(light)
                         rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
-                        return stop_line_waypoint_index, state_of_traffic_light
-
-            else:
-                rospy.loginfo("tl_detector: Stop light detection failed.")
-                return -1, TrafficLight.UNKNOWN
+                        
+#         rospy.loginfo("tl_detector: Stop light detection failed.")
+        return stop_line_waypoint_index, state_of_traffic_light
 
     def get_index_of_closest_waypoint_to_current_pose(self, pose):
         """

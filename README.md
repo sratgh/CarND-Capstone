@@ -34,7 +34,7 @@ Team consists of four individuals from Germany, Spain and the United States.
 
 ### Teamlead & Integration Engineer
 Simon Rudolph takes the role of the team lead.
-The teamlead takes responsibility to setup an integration & working environment. He owns the repository, manages branches and is the source of truth with respect to running the integrated software stack against project objectives in his environment (Udacity's Simulator running on a MacBook Pro and ROS running in a virtual machine on the same hardware).
+The teamlead takes responsibility to setup an integration & working environment. He owns the repository, manages branches and is the source of truth with respect to running the integrated software stack against project objectives in his environment (Udacity's Simulator running on a MacBook Pro and ROS running in a virtual machine on the same hardware as well as within the Udacity workspace).
 ### Developers for Control of Longitudinal and Lateral Vehicle Dynamics
 Stephan Studener and Simon Rudolph act as developers for control of longitudinal and lateral vehicle dynamics.
 The developers for vehicle controls take responsibility for control of the longitudinal and lateral dynamics dbw_node.py and twist_controller.py.
@@ -44,11 +44,12 @@ Simon Rudolph and Zihao Zhang work together to detect and classify the traffic l
 ### Developers for Path Planning
 Mario de la Rosa takes responsibility for implementing the path planner algorithm. This procedure can be found in the class WaypointUpdater defined in _waypoint_updater.py._
 ### Communication and Project Setup
-The team follows the Kanban rules to reach it's objectives and meet twice a day for a "daily scrum". 
-This is necessary for everbody to stay in sync when working in very different time zones. 
+The team follows the Kanban rules to reach it's objectives and meet twice a day for a "daily scrum".
+This is necessary for everbody to stay in sync when working in very different time zones.
 The team lead sets up the daily scrum as a Google Hangout using Google calendar.
 The code base as well as the Kanban board is shared in the team lead's GitHub Repository.
 To manage & communicate progress and throwbacks (bugs), the Kanban-Board is used as well.
+Additionally Slack was setup for the team to have shared communication within different channels. This makes the synchronization outside the meetings a lot easier.
 
 ## Conventions
 This section wraps up coding and committing convetions that have been applied.
@@ -82,9 +83,10 @@ TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 ### Committing Culture: Language, Message Style, Features, Fixes,..
 The following conventions apply to committing to the repository:
 * Commits must have a description that explains why the changes have been made.
-* Commits are either features or fixes.
+* Commits are i.e. features, fixes, documentation, refactoring... (See https://udacity.github.io/git-styleguide/)
 * Commits which add new features must have a description that begin with _feat:_
 * Commits which fix something (including missing documentation) must have a description that begin with _fix:_
+* ...
 
 ##  Architecture of the stack as ROS-Graph
 The following image shows the architecture of the software stack, that is completely based on the robot-operating system (ROS).
@@ -113,7 +115,7 @@ TWIST_CONTROLLER_UPDATE_FREQUENCY = 10
 ```
 * The gains of the PID-Controller [3] controlling the longitudinal vehicle dynamics by publishing brake and throttle:
 ```python
-# PID-Controller tuning parameters, here: The proportional gain, 
+# PID-Controller tuning parameters, here: The proportional gain,
 # the differential gain (KD) and the integral gain (KI).
 KP = 0.18
 KI = 0.0002
@@ -121,7 +123,7 @@ KD = 3.2
 ```
 * The minimum break torque required to keep the vehicle in place:
 ```python
-# As explained in the walk-through, break torque needed to keep the 
+# As explained in the walk-through, break torque needed to keep the
 # vehicle in place.
 TORQUE_TO_KEEP_VEHICLE_STATIONARY = 700  # Nm
 ```
@@ -133,7 +135,7 @@ The detection of traffic lights is based on knowledge of the position of traffic
 Roughly stated the node _tl_detection.py_ works as follows: If the vehicle approaches a traffic light and is sufficiently close, the classifier is invoked
 and fed with the camera image, which is received frequently. The camera looks at the traffic light several times and once, it is assured that the light
 is red, the controller of the longitudinal dynamics is told to bring the vehicle to a full stop. Otherwise the controller of the longitudinal dynamics is told to
-keep the pace. The node tl_detection.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). 
+keep the pace. The node tl_detection.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]).
 These parameters are
 
 * A threshold defining how often a traffic light has to be detected as red before the node publishes the traffic light ahead as being red.  This avoids toggeling to a certain degree when the classifier toggles.

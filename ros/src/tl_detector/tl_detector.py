@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import Int32
-from geometry_msgs.msg import PoseStamped, Pose
+from geometry_msgs.msg import PoseStamped, Pose, TwistStamped
 from styx_msgs.msg import TrafficLightArray, TrafficLight
 from styx_msgs.msg import Lane, Waypoint
 from scipy.spatial import KDTree
@@ -20,16 +20,16 @@ import numpy as np
 # received from the camera, such that toggeling between
 # different states is avoided in case the tl_classifier
 # is not sure
-STATE_COUNT_THRESHOLD = 3
+STATE_COUNT_THRESHOLD = 5
 # This calibration paramter decides if images are saved
 # to the linux-filesystem. This may sacrifice some computational
 # power in favour of having the images for later analysis.
-SAVE_CAMERA_IMAGES_IS_ACTIVE = True
+SAVE_CAMERA_IMAGES_IS_ACTIVE = False
 # This calibration paramter decides if the traffic classifer
 # light classifer is used or the state of the traffic light
 # is taken from the simulator. Turn this to True only when
 # using the code in the simulator!
-USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = True
+USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
 # This calibration paramter renders the rate for
 # proceesing images and detecting traffic lights
 # It should be chosen by ansering the question how fast
@@ -40,7 +40,14 @@ TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
 # attention to the state of traffic light. Below that threshold, camea images
 # are processed, above this is not done.
 SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 100
+# Time waiting stopped before continuing
 
+# State machine parameters
+NUM_PREV_STATES = 5 # Number of previous states to be saved
+CRUISE = 1
+DECELERATING = 2
+STOPPED = 3
+SPEEDING_UP = 4
 
 class TLDetector(object):
     def __init__(self):
@@ -59,10 +66,13 @@ class TLDetector(object):
         self.image_counter_red = 0
         self.image_counter_yellow = 0
         self.image_counter_green = 0
-
+        self.tl_prev_states = [-1]*NUM_PREV_STATES # Save the last five states
+        self.car_state = CRUISE
+        self.current_vel = None
+        
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
         helps you acquire an accurate ground truth data source for the traffic light
@@ -107,6 +117,54 @@ class TLDetector(object):
                 of times till we start using it. Otherwise the previous stable state is
                 used.
                 '''
+                ''' State machine '''
+                self.tl_prev_states.pop(0)
+                self.tl_prev_states.append(state)
+                # Counts the number of red light detections in the last NUM_PREV_STATES
+                count_red = self.tl_prev_states.count(TrafficLight.RED)
+                # Counts the number of green light detections in the last NUM_PREV_STATES
+                count_green = self.tl_prev_states.count(TrafficLight.GREEN)
+                
+                pub_light_wp = -1
+                
+                if (self.car_state  == CRUISE) and (count_red>=3):
+                    '''If it is in cruise and count_red is higher than the specified value
+                    our car starts decelerating'''
+                    self.car_state = DECELERATING
+                    self.last_wp = light_wp
+                    pub_light_wp = light_wp
+                    rospy.loginfo("tl_detector: DECELERATING")
+                if (self.car_state  == DECELERATING):
+                    pub_light_wp = self.last_wp
+                    if (count_green>=4):
+                        ''' If it is decelerating but detects green light, it continues in
+                        cruise'''
+                        self.car_state = SPEEDING_UP
+                        pub_light_wp = -1
+                        rospy.loginfo("tl_detector: SPEEDING_UP")
+                    elif (abs(self.current_vel)<=0.5):
+                        ''' If it is decelerating and the velocity is lower than specified it
+                        goes to stopped state'''
+                        self.car_state = STOPPED
+                        rospy.loginfo("tl_detector: STOPPED")
+                if (self.car_state  == STOPPED):
+                    pub_light_wp = self.last_wp
+                    if (count_green>=5):
+                        ''' If it is stopped and our traffic light turns on green, it changes
+                        to speeding up'''
+                        self.car_state = SPEEDING_UP
+                        pub_light_wp = -1
+                        rospy.loginfo("tl_detector: SPEEDING_UP")
+                if (self.car_state  == SPEEDING_UP):
+                    pub_light_wp = -1
+                    if self.beyond_tl():
+                        '''If it is beyond the traffic light, it goes to cruise state'''
+                        self.car_state = CRUISE
+                        self.tl_prev_states = [-1]*NUM_PREV_STATES
+                        rospy.loginfo("tl_detector: CRUISE")
+                        
+                self.upcoming_red_light_pub.publish(Int32(pub_light_wp))
+                '''        
                 if self.state != state:
                     self.state_count = 0
                     self.state = state
@@ -122,8 +180,9 @@ class TLDetector(object):
 
                 self.state_count += 1
 
-            else:
-                rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
+            #else:
+            #    rospy.loginfo("tl_detector: Missing information, traffic light detection aborted.")
+            '''
             rate.sleep()
 
 
@@ -142,7 +201,7 @@ class TLDetector(object):
         """
         self.waypoints = waypoints
         number_of_waypoints = len(self.waypoints.waypoints)
-        rospy.loginfo("tl_detector: Catched %d waypoints", number_of_waypoints)
+        #rospy.loginfo("tl_detector: Catched %d waypoints", number_of_waypoints)
 
 
     def traffic_cb(self, msg):
@@ -161,7 +220,7 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        rospy.loginfo("tl_detector: Catched an image.")
+        #rospy.loginfo("tl_detector: Catched an image.")
         self.has_image = True
         self.camera_image = msg
         if SAVE_CAMERA_IMAGES_IS_ACTIVE:
@@ -189,7 +248,7 @@ class TLDetector(object):
         stop_line_position = None
         stop_line_waypoint_index = None
         distance = lambda a,b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
-        if self.pose is not None:
+        if not None in (self.waypoints, self.pose):
             vehicle_index = self.get_index_of_closest_waypoint_to_current_pose(self.pose.pose.position)
             vehicle_position = self.waypoints.waypoints[vehicle_index].pose.pose.position
             traffic_light_index = self.get_index_of_closest_traffic_light_to_current_pose(vehicle_position)
@@ -222,7 +281,7 @@ class TLDetector(object):
             cv2.imwrite(file_name, pred_img)
             
 #         self.image_counter += 1
-        rospy.loginfo("tl_detector.py: Camera image saved to %s!", file_name)
+       # rospy.loginfo("tl_detector.py: Camera image saved to %s!", file_name)
 
 
     def get_light_state(self, light):
@@ -286,7 +345,7 @@ class TLDetector(object):
         stop_line_position = None
         stop_line_waypoint_index = None
         distance = lambda a,b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
-        if self.pose is not None:
+        if not None in (self.waypoints, self.pose):
             vehicle_index = self.get_index_of_closest_waypoint_to_current_pose(self.pose.pose.position)
             vehicle_position = self.waypoints.waypoints[vehicle_index].pose.pose.position
             traffic_light_index = self.get_index_of_closest_traffic_light_to_current_pose(vehicle_position)
@@ -299,7 +358,7 @@ class TLDetector(object):
                     distance_to_traffic_light = distance(vehicle_position, traffic_light_position)
                     self.distance_to_traffic_light_pub.publish(distance_to_traffic_light)
                     if distance_to_traffic_light < SAFE_DISTANCE_TO_TRAFFIC_LIGHT:
-                        rospy.loginfo("tl_detector: Traffic light ahead: {}".format(distance_to_traffic_light))
+                        #rospy.loginfo("tl_detector: Traffic light ahead: {}".format(distance_to_traffic_light))
                         light = self.lights[traffic_light_index]
                         stop_line_index = self.get_index_of_closest_stop_line_to_current_pose(traffic_light_position)
                         stop_line_position = self.get_stop_line_positions()[stop_line_index].pose.pose
@@ -310,7 +369,7 @@ class TLDetector(object):
                         state_of_traffic_light = self.get_light_state(light)
                         self.distance_to_traffic_light_pub.publish(distance_to_traffic_light)
                         self.distance_to_stop_line_pub.publish(distance_to_stop_line)
-                        rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
+                        #rospy.loginfo("tl_detector: Traffic light has state: {}".format(state_of_traffic_light))
                         if stop_line_waypoint_index>vehicle_index:
                             return stop_line_waypoint_index, state_of_traffic_light
                         
@@ -387,7 +446,24 @@ class TLDetector(object):
                     minimum_distance_idx = i
 
         return minimum_distance_idx
+    
+    def velocity_cb(self, msg):
+        self.current_vel = msg.twist.linear.x
+        
+    def beyond_tl(self):
+        ''' This function returns True if the car is beyond the traffic light, and False otherwise'''
+        if not None in (self.waypoints, self.pose):
+            vehicle_index = self.get_index_of_closest_waypoint_to_current_pose(self.pose.pose.position)
+            vehicle_position = self.waypoints.waypoints[vehicle_index].pose.pose.position
+            traffic_light_index = self.get_index_of_closest_traffic_light_to_current_pose(vehicle_position)
 
+            if traffic_light_index >= 0:
+                traffic_light_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(self.lights[traffic_light_index].pose.pose.position)
+                return traffic_light_waypoint_index<vehicle_index
+            
+        return False
+                
+       
 if __name__ == '__main__':
     try:
         TLDetector()

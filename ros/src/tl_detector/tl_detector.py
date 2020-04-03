@@ -69,6 +69,7 @@ class TLDetector(object):
         self.tl_prev_states = [-1]*NUM_PREV_STATES # Save the last five states
         self.car_state = CRUISE
         self.current_vel = None
+        self.counter_stopped = 0
         
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -89,6 +90,7 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
         self.distance_to_traffic_light_pub = rospy.Publisher('/distance_to_traffic_light', Int32, queue_size=1)
         self.distance_to_stop_line_pub = rospy.Publisher('/distance_to_stop_line', Int32, queue_size=1)
+        self.stopped_time_pub = rospy.Publisher('/stopped_time', Int32, queue_size=1)#JUST FOR DEBUGGING
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
         try:
@@ -149,12 +151,16 @@ class TLDetector(object):
                         rospy.loginfo("tl_detector: STOPPED")
                 if (self.car_state  == STOPPED):
                     pub_light_wp = self.last_wp
-                    if (count_green>=5):
+                    stopped_time = self.counter_stopped/TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY
+                    self.stopped_time_pub.publish(stopped_time)
+                    if (count_green>=5) or stopped_time>30:
                         ''' If it is stopped and our traffic light turns on green, it changes
                         to speeding up'''
                         self.car_state = SPEEDING_UP
                         pub_light_wp = -1
                         rospy.loginfo("tl_detector: SPEEDING_UP")
+                        self.counter_stopped = 0
+                    self.counter_stopped = self.counter_stopped + 1
                 if (self.car_state  == SPEEDING_UP):
                     pub_light_wp = -1
                     if self.beyond_tl():

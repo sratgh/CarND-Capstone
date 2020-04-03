@@ -363,7 +363,7 @@ class TLDetector(object):
                         stop_line_index = self.get_index_of_closest_stop_line_to_current_pose(traffic_light_position)
                         stop_line_position = self.get_stop_line_positions()[stop_line_index].pose.pose
                         stop_line_waypoint_index = self.get_index_of_closest_waypoint_to_current_pose(stop_line_position.position)
-                        stop_line_waypoint_index -= 4;
+                        stop_line_waypoint_index -= 10;
                         stop_line_wp_position = self.waypoints.waypoints[stop_line_waypoint_index].pose.pose.position
                         distance_to_stop_line = distance(vehicle_position, stop_line_wp_position)
                         state_of_traffic_light = self.get_light_state(light)

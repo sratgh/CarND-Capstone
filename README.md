@@ -94,6 +94,10 @@ The following image shows the architecture of the software stack, that is comple
 The nodes and their responsibilities are explained in the following.
 
 ### Control of Longitudinal and Lateral Vehicle Dynamics: The _twist_controller_-Package
+This package contains a node that takes care that the vehicle follows a reference track. The control problem is seperated into contorl of the longitudinal dynamics by adjusting throttle or brake and control og the lateral dynamics by adjusting the steering angel. The result can be observed in the video below.
+
+![Vehicle follows reference](imgs/Mar-27-2020 12-55-14.mp4)
+
 In the twist controller package two files are subject to change compared to the original files which can be obtained from Udacity's repository (see above):
 * dbw_node.py: This is the ROS-node which runs control of longitudinal and lateral vehicle dynamics and manages communication with other publishers and subscribers.
 * twist_controller.py: This file keeps the class for the control algorithm.

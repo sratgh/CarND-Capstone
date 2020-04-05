@@ -4,7 +4,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from scipy.spatial import KDTree
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Bool
 import numpy as np
 import math
 import tf
@@ -28,26 +28,33 @@ There are two parameters that can be tuned:
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = .5
+MID_POINT = 60 # Point where velocity is decreased from approaching velocity to zero
 
 class WaypointUpdater(object):
     def __init__(self):
         rospy.loginfo('Initializing my waypoint_updater.')
         rospy.init_node('waypoint_updater')
-
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
-
-
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-        # TODO: Add a subscriber for /obstacle_waypoint below
-
+        
         self.pose = None
         self.base_waypoints = None
         self.waypoints_2d = None
         self.waypoint_tree = None
         self.base_lane = None
         self.stopline_wp_idx = -1
+        self.alpha = self.calc_coef_c2(MID_POINT)/self.calc_coef_c1(MID_POINT)
+        self.close_to_tl = False
+        
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/close_to_tl', Bool, self.close_to_tl_cb)
+
+
+        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+
+        # TODO: Add a subscriber for /obstacle_waypoint below
+
+        
         self.loop()
 
 
@@ -148,10 +155,19 @@ class WaypointUpdater(object):
             p.pose = wp.pose
             
             dist = self.distance(waypoints, i, stop_idx)
+            if i == 0:
+                print(dist)
+                
             #vel = math.sqrt(2*MAX_DECEL*dist)
             #vel_coef = (dist/20)**2
             #vel_coef = 0.0
-            vel_coef = 1-(2/(1+math.exp(dist/15)))
+            #vel_coef = 1-(2/(1+math.exp(dist/15)))
+            
+            if self.close_to_tl:
+                vel_coef = self.alpha*self.calc_coef_c1(dist)
+            else:
+                vel_coef = self.calc_coef_c2(dist)
+                
             if vel_coef >1:
                 vel_coef = 1
             vel = vel_coef* wp.twist.twist.linear.x
@@ -161,7 +177,13 @@ class WaypointUpdater(object):
             temp.append(p)
 
         return temp
-
+    
+    def calc_coef_c1 (self,dist):
+        return (-(1/(1+math.exp(dist/10)))+0.5)
+    
+    def calc_coef_c2 (self,dist):
+        return (-(0.5/(1+math.exp((dist-(MID_POINT+50))/10)))+1)
+    
     # Callback function when receiving current_pose
     def pose_cb(self, msg):
         self.pose = msg
@@ -176,6 +198,11 @@ class WaypointUpdater(object):
                 for w in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
+    # Callback function when receiving close_to_tl
+    def close_to_tl_cb(self, msg):
+        # TODO: Callback for /traffic_waypoint message. Implement
+        self.close_to_tl = msg.data
+        
     # Callback function when receiving traffic_waypoint
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement

@@ -188,7 +188,7 @@ class TLDetector(object):
                         self.tl_prev_states = [-1]*NUM_PREV_STATES
                         rospy.loginfo("tl_detector: CRUISE")
                 
-                rospy.loginfo('prev_state %s'%prev_state+' state %s'%self.car_state+' prev_light_wp %s'%output_light_wp+' pub_light_wp %s'%pub_light_wp)
+                #rospy.loginfo('prev_state %s'%prev_state+' state %s'%self.car_state+' prev_light_wp %s'%output_light_wp+' pub_light_wp %s'%pub_light_wp)
                 #rospy.loginfo('light_wp',light_wp,'prev_state',self.state)
                 
                 self.upcoming_red_light_pub.publish(Int32(pub_light_wp))

@@ -130,7 +130,7 @@ class WaypointUpdater(object):
         val = np.dot(yaw_vect, sl_vect - pos_vect)
         close_wp = self.get_closest_waypoint_idx()
         sl_wp = self.stopline_wp_idx
-        print('val: ', val, 'close_wp: ', close_wp, 'sl_wp: ', sl_wp)
+        #print('val: ', val, 'close_wp: ', close_wp, 'sl_wp: ', sl_wp)
         
     def get_yaw(self):
         q = self.pose.pose.orientation;
@@ -155,8 +155,6 @@ class WaypointUpdater(object):
             p.pose = wp.pose
             
             dist = self.distance(waypoints, i, stop_idx)
-            if i == 0:
-                print(dist)
                 
             #vel = math.sqrt(2*MAX_DECEL*dist)
             #vel_coef = (dist/20)**2

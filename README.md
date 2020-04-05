@@ -151,25 +151,16 @@ The detection of traffic lights is based on knowledge of the position of traffic
 Roughly stated the node _tl_detection.py_ works as follows: If the vehicle approaches a traffic light and is sufficiently close, the classifier is invoked
 and fed with the camera image, which is received frequently. The camera looks at the traffic light several times and once, it is assured that the light
 is red, the controller of the longitudinal dynamics is told to bring the vehicle to a full stop. Otherwise the controller of the longitudinal dynamics is told to
-keep the pace. The node tl_detection.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]).
-These parameters are
+keep the pace. The node tl_detection.py has calibration parameters that may be tuned before compile time (before running _catkin_make_ [2]). The behavior is outlined in the following.
 
-* A threshold defining how often a traffic light has to be detected as red before the node publishes the traffic light ahead as being red.  This avoids toggeling to a certain degree when the classifier toggles.
-```python
-# This calibration paramter debounces the light state
-# received from the camera, such that toggeling between
-# different states is avoided in case the tl_classifier
-# is not sure
-STATE_COUNT_THRESHOLD = 3
-```
-* This calibration parameter activates a feature: Each image that is received by tl_detector is saved to disc when this parameter is True. Note: Inside ./ros/src/tl_detection there must be a folder called data. Otherwise this will not work. This consumes computational power and might be switched to False in the real vehicle.
+* The following calibration parameter activates a feature: Each image that is received by tl_detector is saved to disc when this parameter is True. Note: Inside ./ros/src/tl_detection there must be a folder called data. Otherwise this will not work. This consumes computational power and might be switched to False in the real vehicle.
 ```python
 # This calibration paramter decides if images are saved
 # to the linux-filesystem. This may sacrifice some computational
 # power in favour of having the images for later analysis.
 SAVE_CAMERA_IMAGES_IS_ACTIVE = True
 ```
-* This calibration paramter allows to use the ground-truth value for traffic lights. This is available only in the simulator. Be sure to swith this to False when running the code in the real vehicle.
+* The following calibration parameter allows to use the ground-truth value for traffic lights. This is available only in the simulator. Be sure to switch this to False when running the code in the real vehicle.
 ```python
 # This calibration paramter decides if the traffic classifer
 # light classifer is used or the state of the traffic light
@@ -177,7 +168,7 @@ SAVE_CAMERA_IMAGES_IS_ACTIVE = True
 # using the code in the simulator!
 USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
 ```
-* This calibration parameter renders the rate for processing images and detecting traffic lights. It save a lot of computational ressources to turn this down. When it is too small, the vehicle will have moved a lot from where the camera captured an image and stopping in front of a red traffic light might not be possible because informations are not processed in time.
+* This calibration parameter renders the rate for processing images and detecting traffic lights. It saves a lot of computational ressources if this paramter is small. When it is too small, the vehicle will have moved a lot from where the camera captured an image and stopping in front of a red traffic light might not be possible because informations are not processed in time.
 ```python
 # This calibration paramter renders the rate for
 # processing images and detecting traffic lights
@@ -186,7 +177,7 @@ USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
 # Unit is Hz
 TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
 ```
-* These paramters defene thresholds for decelaeration and triggering the classification of traffic light signals. When the vehicle is too far away from the traffic light (distance is larger than threshold), the camera image is received, but not processed. When the vehicle is close to a traffic light (distance is smaller than threshold), camera images are processed and traffic ligth signals are classified.
+* The following two paramters define thresholds for beginning of deceleration and triggering the classification of traffic light signals. When the vehicle is too far away from the traffic light (distance is larger than threshold), the camera image is received, but not processed. When the vehicle is close to a traffic light (distance is smaller than threshold), camera images are processed and traffic ligth signals are classified.
 ```python
 # These calibration parameters allow to tune the threshold in meters for paying
 # attention to the state of traffic light. Below that threshold, camea images
@@ -197,7 +188,7 @@ SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 80
 ```python
 SAFE_DISTANCE_TO_STOP_LINE = 60
 ```
-* In order to give the classifier enough time to process enough images and cut the right decision before the vehicles crosses an intersection, the vehicle is reducing it's velocity. The distance can be calibrated to improve the behavior with the following parameter:
+* In order to give the classifier enough time to process enough images and cut the right decision before the vehicle crosses an intersection, the vehicle is reducing it's velocity. The distance at which deceleration starts can be calibrated to improve this behavior with the following parameter:
 ```python
 # Distance to start decelerating. This distance is the threshold in meters for
 # starting to slow down the vehicle. This parameter is related with the definition
@@ -206,7 +197,7 @@ SAFE_DISTANCE_TO_STOP_LINE = 60
 # measured from the 
 DISTANCE_START_DECELERATING = 180
 ```
-A remark: This behaviour of this node is made deterministic by adding a _self.loop()_-member function that is called periodically. Although the images are published in a non-deterministic fashion, detection is running at a frequency defined by TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY.
+A remark: This behaviour of this node is made as-deterministic-as-possible by adding a _self.loop()_-member function that is called periodically. Although the images are published in a non-deterministic fashion, detection is running at a frequency defined by TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY.
 
 
 ### Path planning: The _waypoint_updater_ - Package

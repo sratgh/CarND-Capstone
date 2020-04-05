@@ -186,12 +186,25 @@ USE_TRAFFIC_LIGHT_STATE_FROM_SIMULATOR = False
 # Unit is Hz
 TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
 ```
-* This paramter is a threshold for triggering the classification of traffic light signals. When the vehicle is too far away from the traffic light (distance is larger than threshold), the camera image is received, but not processed. When the vehicle is close to a traffic light (distance is smaller than threshold), camera images are processed and traffic ligth signals are classified.
+* These paramters defene thresholds for decelaeration and triggering the classification of traffic light signals. When the vehicle is too far away from the traffic light (distance is larger than threshold), the camera image is received, but not processed. When the vehicle is close to a traffic light (distance is smaller than threshold), camera images are processed and traffic ligth signals are classified.
 ```python
-# This calibration parameter allwos to tune the threshold in meters for paying
+# These calibration parameters allow to tune the threshold in meters for paying
 # attention to the state of traffic light. Below that threshold, camea images
 # are processed, above this is not done.
 SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 80
+```
+* The distance before a stop-line, that the vehicle must stop at if the corresponding traffic light is red is given by the following parameter.
+```python
+SAFE_DISTANCE_TO_STOP_LINE = 60
+```
+* In order to give the classifier enough time to process enough images and cut the right decision before the vehicles crosses an intersection, the vehicle is reducing it's velocity. The distance can be calibrated to improve the behavior with the following parameter:
+```python
+# Distance to start decelerating. This distance is the threshold in meters for
+# starting to slow down the vehicle. This parameter is related with the definition
+# of the functions to define the reference velocity, thus, when modifing it, the 
+# MID_POINT parameter in waypoint_updater must be modified also. This distance is 
+# measured from the 
+DISTANCE_START_DECELERATING = 180
 ```
 A remark: This behaviour of this node is made deterministic by adding a _self.loop()_-member function that is called periodically. Although the images are published in a non-deterministic fashion, detection is running at a frequency defined by TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY.
 

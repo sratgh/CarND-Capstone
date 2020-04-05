@@ -25,7 +25,7 @@ Team consists of four individuals from Germany, Spain and the United States.
 
 |     Image                   |     Name      |  LinkedIn or GitHub
 |------------------------|---------------|-----------------------
-| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener | [Stephan](https://www.linkedin.com/in/stephanstudener/)
+| <img src="./data/Stephan_Studener.jpg" alt="Stephan Studener" width="150" height="150"> | Stephan Studener (Udacity-Username: _Stephan S_, stephan.studener@googlemail.com) | [Stephan](https://www.linkedin.com/in/stephanstudener/)
 | <img src="./data/Mario_delaRosa.jpg" alt="Mario de la Rosa" width="150" height="150"> | Mario de la Rosa | [Mario](https://www.linkedin.com/in/mardetri/)
 | <img src="./data/Zihao_Zhang.jpg" alt="Zihao Zhang" width="150" height="150"> | Zihao Zhang | [Zihao](https://www.linkedin.com/in/zihao-zhang)
 | <img src="./data/Simon_Rudolph.jpg" alt="Simon Rudolph" width="150" height="150"> | Simon Rudolph | [Simon](https://www.linkedin.com/in/simon-rudolph-b4b762138/)

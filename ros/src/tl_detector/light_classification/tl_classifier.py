@@ -68,7 +68,7 @@ class TLClassifier(object):
         self.EPOCHS = 10
         self.VALIDATION_STEPS=8
         self.trained_model = None
-        self.get_labels("light_classification/data/")
+        self.get_labels("light_classification/train/")
         # Frozen inference graph files. NOTE: change the path to where you saved the models.
         #self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
         #self.RFCN_GRAPH_FILE = 'rfcn_resnet101_coco_11_06_2017/frozen_inference_graph.pb'

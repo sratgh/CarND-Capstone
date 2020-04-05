@@ -68,7 +68,7 @@ class TLClassifier(object):
         self.EPOCHS = 10
         self.VALIDATION_STEPS=8
         self.trained_model = None
-        self.get_labels("light_classification/train/")
+        self.get_labels("light_classification/data/")
         # Frozen inference graph files. NOTE: change the path to where you saved the models.
         #self.SSD_GRAPH_FILE = 'ssd_mobilenet_v1_coco_11_06_2017/frozen_inference_graph.pb'
         #self.RFCN_GRAPH_FILE = 'rfcn_resnet101_coco_11_06_2017/frozen_inference_graph.pb'
@@ -96,7 +96,7 @@ class TLClassifier(object):
         # The classification of the object (integer id).
         #self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
-    def get_labels(self, train_dir="train/"):
+    def get_labels(self, train_dir="data/"):
         '''
         Get labels from folder structure
         '''
@@ -164,7 +164,7 @@ class TLClassifier(object):
 
         return train_data_gen, valid_data_gen
 
-    def pipeline(self, mode="train", pred_img_name=None, train_dir="train/", valid_dir="valid/"):
+    def pipeline(self, mode="train", pred_img_name=None, train_dir="data/", valid_dir="valid/"):
         '''
         Pipeline function that can be used either for training or for usage/prediction
         mode can be one of:
@@ -196,12 +196,15 @@ class TLClassifier(object):
             #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #cv2.imwrite("test.png", img*255)
         else:
+            
             img = cv2.resize(img, (self.IMG_WIDTH, self.IMG_HEIGHT))
             img = np.array(img).astype('float32')/255
 
         # TODO: Cropping
 
         #img = np.array(img).astype('float32')/255
+        img[:,:,1] = 0
+        img[:,:,0] = 0
         img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3] = (BATCHSIZE, HIGHT, WIDHT, CHANNEL)
 
         return img
@@ -494,12 +497,12 @@ if __name__ == '__main__':
     #
     #     # write to file
     #     new_clip.write_videofile('result.mp4')
-    cls.pipeline(mode="train", train_dir="train/", valid_dir="valid/")
-    cls.load_model("tl_classifier_mobilenet.h5")
-    print(cls.pipeline(mode="predict", pred_img_name="test/red_traffic_light.png"))
+    cls.pipeline(mode="train", train_dir="data/", valid_dir="valid/")
+#     cls.load_model("tl_classifier_mobilenet.h5")
+#     print(cls.pipeline(mode="predict", pred_img_name="test/red_traffic_light.png"))
     #print(cls.pipeline(mode="predict", pred_img_name="test/yellow_traffic_light.png"))
     #print(cls.pipeline(mode="predict", pred_img_name="test/green_traffic_light.png"))
-    cls.get_labels("train/")
+#     cls.get_labels("train/")
     #print(cls.CLASS_NAMES)
 
     # Set `num_parallel_calls` so multiple images are loaded/processed in parallel.

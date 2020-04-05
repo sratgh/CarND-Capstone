@@ -42,7 +42,8 @@ class Controller(object):
         self.decel_limit = decel_limit
         self.accel_limit = accel_limit
         self.wheel_radius = wheel_radius
-
+        self.prev_brake = None
+        
         self.yaw_controller = YawController(
             wheel_base, steer_ratio, MIN_SPEED, max_lat_accel, max_steer_angle)
         self.throttle_controller = PID(
@@ -51,6 +52,7 @@ class Controller(object):
         self.last_time = rospy.get_time()
         
         self.ref_vel_pub = rospy.Publisher('/ref_vel', Float32, queue_size=1)
+        self.current_vel_x_pub = rospy.Publisher('/current_vel_x', Float32, queue_size=1)
         self.throttle_pub = rospy.Publisher('/throttle', Float32, queue_size=1)
         self.brake_pub = rospy.Publisher('/brake', Float32, queue_size=1)
         self.error_vel_pub = rospy.Publisher('/error_vel', Float32, queue_size=1)
@@ -64,7 +66,7 @@ class Controller(object):
         current_time = rospy.get_time()
         current_vel = self.v_low_pass_filter.filt(current_vel)
         error_vel = linear_vel - current_vel
-        ref_vel = linear_vel*2.24
+        ref_vel = linear_vel
         self.ref_vel_pub.publish(ref_vel)
         steering = self.yaw_controller.get_steering(
             linear_vel, angular_vel, current_vel)
@@ -81,11 +83,16 @@ class Controller(object):
             # Velocity error is negative, so we need to slow down.
             throttle = 0
             decel = max(error_vel, self.decel_limit)
-            brake = abs(decel) * self.vehicle_mass * self.wheel_radius
-
+            ref_brake = abs(decel) * self.vehicle_mass * self.wheel_radius
+            if self.prev_brake is None:
+                self.prev_brake = brake
+            #Filter
+            brake = 0.2*ref_brake + 0.8*self.prev_brake
+            
+        self.prev_brake = brake
         self.last_vel = current_vel
         self.last_time = rospy.get_time()
         self.error_vel_pub.publish(error_vel)
-        
-        self.brake_pub.publish(brake)
+        self.current_vel_x_pub.publish(current_vel)
+        self.brake_pub.publish(brake/100)
         return throttle, brake, steering

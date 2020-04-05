@@ -126,6 +126,10 @@ class TLClassifier(object):
 
             yield (batch_crops, batch_y)
 
+    def preprocess_image_train(self, img):
+        print(img)
+        return img[:,:,0] # r,g,b
+
     def load_datasets(self, train_dir, valid_dir):
         '''
         Loads the training and validation dataset
@@ -139,12 +143,13 @@ class TLClassifier(object):
         train_datagen = ImageDataGenerator(rescale=1./255,
                                             shear_range=0.2,
                                             zoom_range=0.2,
-                                            horizontal_flip=True)
+                                            horizontal_flip=True,
+                                            preprocessing_function=self.preprocess_image_train)
 
 
 
         # Create validation generator
-        valid_datagen = ImageDataGenerator(rescale=1./255)
+        valid_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=self.preprocess_image_train)
 
         self.STEPS_PER_EPOCH = np.ceil(self.image_count/self.BATCH_SIZE)
 
@@ -195,11 +200,11 @@ class TLClassifier(object):
             img = cv2.resize(img, (self.IMG_WIDTH, self.IMG_HEIGHT))
             #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #cv2.imwrite("test.png", img*255)
-        else:
+        elif img is not None:
             img = cv2.resize(img, (self.IMG_WIDTH, self.IMG_HEIGHT))
             img = np.array(img).astype('float32')/255
-
-        # TODO: Cropping
+        else:
+            pass
 
         #img = np.array(img).astype('float32')/255
         img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3] = (BATCHSIZE, HIGHT, WIDHT, CHANNEL)
@@ -244,6 +249,7 @@ class TLClassifier(object):
         Saves the given model to disk
         '''
         model.save(filename)
+        print("model saved")
 
     def load_model(self, filename):
         '''

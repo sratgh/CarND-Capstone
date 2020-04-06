@@ -65,7 +65,7 @@ class TLClassifier(object):
         self.IMG_HEIGHT = 224
         self.IMG_WIDTH = 224
         self.CLASS_NAMES = None
-        self.EPOCHS = 10
+        self.EPOCHS = 5
         self.VALIDATION_STEPS=8
         self.trained_model = None
         self.get_labels("light_classification/train/")
@@ -143,13 +143,12 @@ class TLClassifier(object):
         train_datagen = ImageDataGenerator(rescale=1./255,
                                             shear_range=0.2,
                                             zoom_range=0.2,
-                                            horizontal_flip=True,
-                                            preprocessing_function=self.preprocess_image_train)
+                                            horizontal_flip=True)
 
 
 
         # Create validation generator
-        valid_datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=self.preprocess_image_train)
+        valid_datagen = ImageDataGenerator(rescale=1./255)
 
         self.STEPS_PER_EPOCH = np.ceil(self.image_count/self.BATCH_SIZE)
 
@@ -206,8 +205,8 @@ class TLClassifier(object):
 
 
         #img = np.array(img).astype('float32')/255
-        img[:,:,1] = 0
-        img[:,:,0] = 0
+        #img[:,:,1] = 0
+        #img[:,:,0] = 0
         img = np.expand_dims(img, axis=0) #[224,224,3] --> [1,224, 224, 3] = (BATCHSIZE, HIGHT, WIDHT, CHANNEL)
 
         return img
@@ -223,7 +222,7 @@ class TLClassifier(object):
         for i,layer in enumerate(model.layers):
             print(i,layer.name)
         print(len(model.layers)-3)
-        for i in range(len(model.layers)-3):
+        for i in range(len(model.layers)-5):
 #             layer.trainable=False
             model.layers[i].trainable = False
         # or if we want to set the first 20 layers of the network to be non-trainable
@@ -501,7 +500,7 @@ if __name__ == '__main__':
     #
     #     # write to file
     #     new_clip.write_videofile('result.mp4')
-    cls.pipeline(mode="train", train_dir="data/", valid_dir="valid/")
+    cls.pipeline(mode="train", train_dir="train/", valid_dir="valid/")
 #     cls.load_model("tl_classifier_mobilenet.h5")
 #     print(cls.pipeline(mode="predict", pred_img_name="test/red_traffic_light.png"))
     #print(cls.pipeline(mode="predict", pred_img_name="test/yellow_traffic_light.png"))

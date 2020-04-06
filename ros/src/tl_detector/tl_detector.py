@@ -172,7 +172,7 @@ class TLDetector(object):
                     pub_light_wp = self.last_wp
                     stopped_time = self.counter_stopped/TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY
                     self.stopped_time_pub.publish(stopped_time)
-                    if (count_green>=5) or stopped_time>30:
+                    if (count_green>=5):# or stopped_time>30:
                         ''' If it is stopped and our traffic light turns on green, it changes
                         to speeding up'''
                         self.car_state = SPEEDING_UP

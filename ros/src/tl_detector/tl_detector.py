@@ -39,14 +39,14 @@ TRAFFIC_LIGHT_DETECTION_UPDATE_FREQUENCY = 2
 # This calibration parameter allwos to tune the threshold in meters for paying
 # attention to the state of traffic light. Below that threshold, camea images
 # are processed, above this is not done.
-SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 80
-SAFE_DISTANCE_TO_STOP_LINE = 60
+SAFE_DISTANCE_TO_TRAFFIC_LIGHT = 60 #80
+SAFE_DISTANCE_TO_STOP_LINE = 40 # 60
 # Distance to start decelerating. This distance is the threshold in meters for
 # starting to slow down the vehicle. This parameter is related with the definition
 # of the functions to define the reference velocity, thus, when modifing it, the 
 # MID_POINT parameter in waypoint_updater must be modified also. This distance is 
 # measured from the 
-DISTANCE_START_DECELERATING = 180
+DISTANCE_START_DECELERATING = 120 # 180
 
 # State machine parameters
 NUM_PREV_STATES = 5 # Number of previous states to be saved

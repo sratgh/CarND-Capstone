@@ -200,6 +200,7 @@ class TLClassifier(object):
             #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             #cv2.imwrite("test.png", img*255)
         else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (self.IMG_WIDTH, self.IMG_HEIGHT))
             img = np.array(img).astype('float32')/255
 

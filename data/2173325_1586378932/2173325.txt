@@ -1,0 +1,11 @@
+
+Simulator
+    Comments: 
+        The vehicle did not correctly stop at the line for the traffic lights. Please revise the submission to ensure that the vehicle stops at traffic lines for red lights and proceeds when the light turns green.
+
+The car remained stationary for a long time even though it was supposed to move.
+
+
+Carla:
+    Comments: 
+        None
